@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atomic Lab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#0f1520;--panel:#172033;--panel2:#1d2940;--ink:#e6ecf5;--muted:#93a1b8;--line:#2a3855;--accent:#5cc8ff;--warn:#f0b955}
+:root[data-theme=light]{--bg:#eef1f6;--panel:#ffffff;--panel2:#f3f6fb;--ink:#172033;--muted:#566480;--line:#d3dae6;--accent:#0a74c9;--warn:#a86a00}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,"Segoe UI",Tahoma,system-ui,sans-serif;font-size:15px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed=true],button.on{background:var(--accent);color:#04121c;border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px;margin-inline-end:auto}
+header input[type=search],select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+header input[type=search]{width:180px}
+nav{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;border-bottom:1px solid var(--line)}
+nav button{white-space:nowrap}
+main{padding:12px 14px 40px;max-width:1280px;margin:auto}
+.tab{display:none}.tab.show{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px;align-items:center}
+.chips .lbl{color:var(--muted);font-size:13px}
+.chips button{padding:4px 10px;font-size:13px}
+.scroll{overflow-x:auto;padding-bottom:8px}
+#ptable{display:grid;grid-template-columns:repeat(18,minmax(42px,1fr));gap:3px;min-width:790px;direction:ltr}
+.cell{position:relative;border-radius:6px;padding:3px 4px;min-height:54px;cursor:pointer;color:#071018;border:2px solid transparent;transition:opacity .15s,transform .1s;user-select:none}
+.cell:hover{transform:scale(1.07);z-index:2}
+.cell .z{font-size:10px;opacity:.75}
+.cell .s{font-size:17px;font-weight:700;line-height:1.05;display:block}
+.cell .n{font-size:8.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.cell.dim{opacity:.16}
+.cell.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--accent)}
+.cell.cmp::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:#04121c;box-shadow:0 0 0 1.5px #fff}
+.ph{border:1px dashed var(--line);border-radius:6px;font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;min-height:54px}
+.grid2{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:15px;margin:0 0 8px}
+.head{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+.big{width:84px;height:84px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#071018;flex:none}
+.big b{font-size:34px;line-height:1}.big small{font-size:11px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+.cfg{font-family:"Cascadia Mono",Consolas,monospace;font-size:14px;word-break:break-word;direction:ltr;text-align:left}
+.bar{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0;direction:ltr}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--accent)}
+.note{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.warn{border-inline-start:3px solid var(--warn);padding:6px 10px;background:var(--panel2);border-radius:6px;font-size:13px;margin:8px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+#glwrap{position:relative;height:min(68vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 40%,var(--panel2),var(--bg))}
+#gl{position:absolute;inset:0;touch-action:none}
+#gl canvas{width:100%;height:100%;display:block}
+#legend{position:absolute;top:8px;inset-inline-start:8px;background:color-mix(in srgb,var(--panel) 85%,transparent);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;max-width:60%;pointer-events:none;direction:ltr;text-align:left}
+#legend div{display:flex;gap:6px;align-items:center}
+#legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+table.cmp{border-collapse:collapse;width:100%;min-width:480px;font-size:14px}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:start;vertical-align:top}
+table.cmp th{color:var(--muted);font-weight:500}
+.pass{color:#4cc27a}.fail{color:#f2705b}
+ul.plain{padding-inline-start:18px;margin:6px 0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.elbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.spacer{flex:1}
+.glbox{position:relative;height:min(62vh,520px);min-height:320px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 40%,var(--panel2),var(--bg));margin-top:10px}
+.glbox canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.gllegend{position:absolute;top:8px;inset-inline-start:8px;z-index:2;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12.5px}
+canvas.plot{width:100%;display:block}
+.sl{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px;flex-wrap:wrap}.sl input[type=range]{flex:1;min-width:120px}
+.brow{display:flex;align-items:center;gap:10px;margin:3px 0;direction:ltr}.brow.emp{opacity:.55}
+.bl{width:52px;font-family:monospace;font-size:14px}.bb{display:flex;gap:2px}
+.box{display:inline-flex;flex-direction:column;align-items:center;justify-content:space-between;width:42px;height:46px;border:1.5px solid var(--muted);border-radius:4px;background:var(--panel2);padding:1px}
+.box b{font-size:16px;line-height:1.2;color:var(--accent)}.box i{font-size:8.5px;font-style:normal;color:var(--muted)}
+.box.ck{cursor:pointer}.box.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+tr.ck{cursor:pointer}tr.ck:hover{background:var(--panel2)}
+.shl{border-bottom:1px solid var(--line);padding:2px 0}
+textarea{resize:vertical}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <input type="search" id="q" aria-label="search" autocomplete="off">
+  <button id="btnLang" aria-label="language">فارسی</button>
+  <button id="btnTheme" aria-label="theme"></button>
+</header>
+<nav id="nav"></nav>
+<main>
+  <section class="tab" id="tab-table">
+    <div class="chips" id="catChips"></div>
+    <div class="chips" id="blockChips"></div>
+    <div class="chips"><span class="lbl" id="lblColor"></span><select id="colorBy"></select></div>
+    <div class="scroll"><div id="ptable" role="grid"></div></div>
+    <div id="colorKey" class="chips"></div>
+    <div class="grid2">
+      <div class="card" id="detail"></div>
+      <div class="card" id="detail2"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-atom">
+    <div class="row">
+      <button id="prevEl">◀</button>
+      <input type="number" id="elNum" min="1" max="118" style="width:78px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px">
+      <button id="nextEl">▶</button>
+      <strong id="atomName"></strong>
+    </div>
+    <div class="row" id="modeBtns"></div>
+    <div id="glwrap"><div id="gl"></div><div id="legend"></div></div>
+    <div class="row">
+      <button id="btnPlay"></button>
+      <button id="btnReset"></button>
+      <span class="note" id="hint"></span>
+    </div>
+    <div class="warn" id="modeNote"></div>
+    <div class="card"><h2 id="aboutH"></h2><div id="about"></div></div>
+  </section>
+
+  <section class="tab" id="tab-compare">
+    <div class="card"><h2 id="cmpH"></h2><div class="scroll" id="cmpBody"></div></div>
+  </section>
+
+  <section class="tab" id="tab-sources">
+    <div class="card"><h2 id="srcH"></h2><div id="srcBody"></div></div>
+    <div class="card" style="margin-top:12px"><h2 id="testH"></h2><button id="runTests"></button><div id="testOut" style="margin-top:8px"></div></div>
+    <div class="card" style="margin-top:12px"><h2 id="roadH"></h2><div id="roadBody"></div></div>
+  </section>
+</main>
+
+<!-- ================= CORE: data + pure logic (no DOM) ================= -->
+<script id="core">
+// [symbol, English name, Persian name, standard atomic weight (string in [] = mass number of a radioactive isotope; no standard weight), Pauling electronegativity or null]
+const RAW=[
+['H','Hydrogen','هیدروژن',1.008,2.20],['He','Helium','هلیم',4.0026,null],
+['Li','Lithium','لیتیم',6.94,0.98],['Be','Beryllium','بریلیم',9.0122,1.57],['B','Boron','بور',10.81,2.04],['C','Carbon','کربن',12.011,2.55],['N','Nitrogen','نیتروژن',14.007,3.04],['O','Oxygen','اکسیژن',15.999,3.44],['F','Fluorine','فلوئور',18.998,3.98],['Ne','Neon','نئون',20.180,null],
+['Na','Sodium','سدیم',22.990,0.93],['Mg','Magnesium','منیزیم',24.305,1.31],['Al','Aluminium','آلومینیوم',26.982,1.61],['Si','Silicon','سیلیسیم',28.085,1.90],['P','Phosphorus','فسفر',30.974,2.19],['S','Sulfur','گوگرد',32.06,2.58],['Cl','Chlorine','کلر',35.45,3.16],['Ar','Argon','آرگون',39.95,null],
+['K','Potassium','پتاسیم',39.098,0.82],['Ca','Calcium','کلسیم',40.078,1.00],['Sc','Scandium','اسکاندیم',44.956,1.36],['Ti','Titanium','تیتانیم',47.867,1.54],['V','Vanadium','وانادیم',50.942,1.63],['Cr','Chromium','کروم',51.996,1.66],['Mn','Manganese','منگنز',54.938,1.55],['Fe','Iron','آهن',55.845,1.83],['Co','Cobalt','کبالت',58.933,1.88],['Ni','Nickel','نیکل',58.693,1.91],['Cu','Copper','مس',63.546,1.90],['Zn','Zinc','روی',65.38,1.65],['Ga','Gallium','گالیم',69.723,1.81],['Ge','Germanium','ژرمانیم',72.630,2.01],['As','Arsenic','آرسنیک',74.922,2.18],['Se','Selenium','سلنیم',78.971,2.55],['Br','Bromine','برم',79.904,2.96],['Kr','Krypton','کریپتون',83.798,3.00],
+['Rb','Rubidium','روبیدیم',85.468,0.82],['Sr','Strontium','استرانسیم',87.62,0.95],['Y','Yttrium','ایتریم',88.906,1.22],['Zr','Zirconium','زیرکونیم',91.224,1.33],['Nb','Niobium','نیوبیم',92.906,1.6],['Mo','Molybdenum','مولیبدن',95.95,2.16],['Tc','Technetium','تکنسیم','[98]',1.9],['Ru','Ruthenium','روتنیم',101.07,2.2],['Rh','Rhodium','رودیم',102.91,2.28],['Pd','Palladium','پالادیم',106.42,2.20],['Ag','Silver','نقره',107.87,1.93],['Cd','Cadmium','کادمیم',112.41,1.69],['In','Indium','ایندیم',114.82,1.78],['Sn','Tin','قلع',118.71,1.96],['Sb','Antimony','آنتیموان',121.76,2.05],['Te','Tellurium','تلوریم',127.60,2.1],['I','Iodine','ید',126.90,2.66],['Xe','Xenon','زنون',131.29,2.6],
+['Cs','Caesium','سزیم',132.91,0.79],['Ba','Barium','باریم',137.33,0.89],
+['La','Lanthanum','لانتانیم',138.91,1.10],['Ce','Cerium','سریم',140.12,1.12],['Pr','Praseodymium','پرازئودیمیم',140.91,1.13],['Nd','Neodymium','نئودیمیم',144.24,1.14],['Pm','Promethium','پرومتیم','[145]',1.13],['Sm','Samarium','ساماریم',150.36,1.17],['Eu','Europium','یوروپیم',151.96,1.2],['Gd','Gadolinium','گادولینیم',157.25,1.2],['Tb','Terbium','تربیم',158.93,null],['Dy','Dysprosium','دیسپروزیم',162.50,1.22],['Ho','Holmium','هولمیم',164.93,1.23],['Er','Erbium','اربیم',167.26,1.24],['Tm','Thulium','تولیم',168.93,1.25],['Yb','Ytterbium','ایتربیم',173.05,1.1],['Lu','Lutetium','لوتسیم',174.97,1.27],
+['Hf','Hafnium','هافنیم',178.49,1.3],['Ta','Tantalum','تانتال',180.95,1.5],['W','Tungsten','تنگستن',183.84,2.36],['Re','Rhenium','رنیم',186.21,1.9],['Os','Osmium','اوسمیم',190.23,2.2],['Ir','Iridium','ایریدیم',192.22,2.20],['Pt','Platinum','پلاتین',195.08,2.28],['Au','Gold','طلا',196.97,2.54],['Hg','Mercury','جیوه',200.59,2.00],['Tl','Thallium','تالیم',204.38,1.62],['Pb','Lead','سرب',207.2,2.33],['Bi','Bismuth','بیسموت',208.98,2.02],['Po','Polonium','پولونیم','[209]',2.0],['At','Astatine','آستاتین','[210]',2.2],['Rn','Radon','رادون','[222]',2.2],
+['Fr','Francium','فرانسیم','[223]',null],['Ra','Radium','رادیم','[226]',0.9],
+['Ac','Actinium','آکتینیم','[227]',1.1],['Th','Thorium','توریم',232.04,1.3],['Pa','Protactinium','پروتاکتینیم',231.04,1.5],['U','Uranium','اورانیم',238.03,1.38],['Np','Neptunium','نپتونیم','[237]',1.36],['Pu','Plutonium','پلوتونیم','[244]',1.28],['Am','Americium','آمریسیم','[243]',1.13],['Cm','Curium','کوریم','[247]',1.28],['Bk','Berkelium','برکلیم','[247]',1.3],['Cf','Californium','کالیفرنیم','[251]',1.3],['Es','Einsteinium','اینشتینیم','[252]',1.3],['Fm','Fermium','فرمیم','[257]',1.3],['Md','Mendelevium','مندلویم','[258]',1.3],['No','Nobelium','نوبلیم','[259]',1.3],['Lr','Lawrencium','لارنسیم','[266]',null],
+['Rf','Rutherfordium','رادرفوردیم','[267]',null],['Db','Dubnium','دوبنیم','[268]',null],['Sg','Seaborgium','سیبورگیم','[269]',null],['Bh','Bohrium','بوهریم','[270]',null],['Hs','Hassium','هاسیم','[269]',null],['Mt','Meitnerium','مایتنریم','[278]',null],['Ds','Darmstadtium','دارمشتادیم','[281]',null],['Rg','Roentgenium','رونتگنیم','[282]',null],['Cn','Copernicium','کوپرنیسیم','[285]',null],['Nh','Nihonium','نیهونیم','[286]',null],['Fl','Flerovium','فلروویم','[289]',null],['Mc','Moscovium','مسکوویم','[290]',null],['Lv','Livermorium','لیورموریم','[293]',null],['Ts','Tennessine','تنسین','[294]',null],['Og','Oganesson','اوگانسون','[294]',null]
+];
+
+const CAT={
+ alkali:{c:'#f2705b',en:'Alkali metal',fa:'فلز قلیایی'},
+ alkaline:{c:'#f0a04b',en:'Alkaline earth metal',fa:'فلز قلیایی خاکی'},
+ transition:{c:'#4f9bf0',en:'Transition metal',fa:'فلز واسطه'},
+ post:{c:'#8393b8',en:'Post-transition metal',fa:'فلز پس‌واسطه'},
+ metalloid:{c:'#4cc2a1',en:'Metalloid',fa:'شبه‌فلز'},
+ nonmetal:{c:'#5fd36f',en:'Reactive nonmetal',fa:'نافلز'},
+ halogen:{c:'#d6d44f',en:'Halogen',fa:'هالوژن'},
+ noble:{c:'#b784e6',en:'Noble gas',fa:'گاز نجیب'},
+ lanthanide:{c:'#e66fb0',en:'Lanthanide',fa:'لانتانید'},
+ actinide:{c:'#c8607f',en:'Actinide',fa:'اکتینید'},
+ unknown:{c:'#7a8499',en:'Unknown properties',fa:'ویژگی‌ها نامشخص'}
+};
+const BLOCKC={s:'#f2705b',p:'#5fd36f',d:'#4f9bf0',f:'#e66fb0'};
+
+// Layout: grid position (row, col). Rows 9 and 10 hold the f-block strips (57–71, 89–103).
+function gridPos(z){
+ if(z===1)return[1,1]; if(z===2)return[1,18];
+ if(z<=4)return[2,z-2]; if(z<=10)return[2,z+8];
+ if(z<=12)return[3,z-10]; if(z<=18)return[3,z];
+ if(z<=36)return[4,z-18]; if(z<=54)return[5,z-36];
+ if(z<=56)return[6,z-54]; if(z<=71)return[9,z-54]; if(z<=86)return[6,z-68];
+ if(z<=88)return[7,z-86]; if(z<=103)return[10,z-86]; return[7,z-100];
+}
+const SETS={
+ alkali:[3,11,19,37,55,87],alkaline:[4,12,20,38,56,88],
+ metalloid:[5,14,32,33,51,52],nonmetal:[1,6,7,8,15,16,34],
+ halogen:[9,17,35,53,85,117],noble:[2,10,18,36,54,86,118],
+ post:[13,31,49,50,81,82,83,84,113,114,115,116]
+};
+function category(z){
+ for(const k in SETS)if(SETS[k].includes(z))return k;
+ if(z>=57&&z<=71)return'lanthanide'; if(z>=89&&z<=103)return'actinide';
+ if(z>=109)return'unknown';
+ return'transition';
+}
+function periodOf(z){const r=gridPos(z)[0];return r===9?6:r===10?7:r}
+function groupOf(z){
+ const [r,c]=gridPos(z);
+ if(z===71||z===103)return 3;            // Lu, Lr: IUPAC 2021 provisional group 3
+ if(r>=9)return null;                    // La–Yb, Ac–No: f-block, no group number
+ return c;
+}
+function blockOf(z){
+ if(z===2)return's'; // He is placed in group 18 but its electrons are 1s²
+ const p=periodOf(z); const g=groupOf(z);
+ if(z>=57&&z<=70||z>=89&&z<=102)return'f';
+ if(z===71||z===103)return'd';           // placement convention; Lr ground state is 7p¹ (see notes)
+ if(g===1||g===2)return's'; if(g>=3&&g<=12)return'd'; return'p';
+}
+const GAS=[1,2,7,8,9,10,17,18,36,54,86], LIQ=[35,80];
+function stateSTP(z){
+ if(GAS.includes(z))return'gas'; if(LIQ.includes(z))return'liquid';
+ if(z===85||z===87||z>=100)return'unknown'; return'solid';
+}
+
+// ---- Electron configurations ----
+const ORDER=[[1,0],[2,0],[2,1],[3,0],[3,1],[4,0],[3,2],[4,1],[5,0],[4,2],[5,1],[6,0],[4,3],[5,2],[6,1],[7,0],[5,3],[6,2],[7,1]];
+const LET='spdf';
+// Ground-state deviations from the Madelung (Aufbau) filling order. Source: NIST ASD ground-state configurations (Z ≤ 103).
+const EXC={
+ 24:{'3d':5,'4s':1},29:{'3d':10,'4s':1},
+ 41:{'4d':4,'5s':1},42:{'4d':5,'5s':1},44:{'4d':7,'5s':1},45:{'4d':8,'5s':1},46:{'4d':10,'5s':0},47:{'4d':10,'5s':1},
+ 57:{'4f':0,'5d':1},58:{'4f':1,'5d':1},64:{'4f':7,'5d':1},
+ 78:{'5d':9,'6s':1},79:{'5d':10,'6s':1},
+ 89:{'5f':0,'6d':1},90:{'5f':0,'6d':2},91:{'5f':2,'6d':1},92:{'5f':3,'6d':1},93:{'5f':4,'6d':1},96:{'5f':7,'6d':1},
+ 103:{'6d':0,'7p':1}
+};
+function madelung(z){
+ const o={};let left=z;
+ for(const[n,l]of ORDER){if(left<=0)break;const t=Math.min(2*(2*l+1),left);o[n+LET[l]]=t;left-=t;}
+ return o;
+}
+function config(z){
+ const o=madelung(z); const e=EXC[z];
+ if(e)for(const k in e)o[k]=e[k];
+ for(const k in o)if(!o[k])delete o[k];
+ return o;
+}
+const sortKeys=o=>Object.keys(o).sort((a,b)=>(+a[0])-(+b[0])||LET.indexOf(a[1])-LET.indexOf(b[1]));
+const SUP='⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sup=n=>String(n).split('').map(d=>SUP[d]).join('');
+function cfgText(o){return sortKeys(o).map(k=>k+sup(o[k])).join(' ')}
+const NOBLE=[2,10,18,36,54,86], NOBLE_SYM={2:'He',10:'Ne',18:'Ar',36:'Kr',54:'Xe',86:'Rn'};
+function shorthand(z){
+ const full=config(z);
+ const core=NOBLE.filter(n=>n<z).pop();
+ if(!core)return cfgText(full);
+ const c=madelung(core), rest={};
+ for(const k in full){const v=full[k]-(c[k]||0);if(v>0)rest[k]=v;else if(v<0)throw new Error('core mismatch '+z);}
+ return'['+NOBLE_SYM[core]+'] '+cfgText(rest);
+}
+function shells(z){const s={};const o=config(z);for(const k in o)s[+k[0]]=(s[+k[0]]||0)+o[k];return s}
+const massNum=z=>{const m=RAW[z-1][3];return typeof m==='string'?parseInt(m.slice(1)):Math.round(m)};
+const EL=RAW.map((r,i)=>{const z=i+1;return{z,sym:r[0],en:r[1],fa:r[2],mass:r[3],radioactiveNoStd:typeof r[3]==='string',
+ A:massNum(z),chi:r[4],cat:category(z),period:periodOf(z),group:groupOf(z),block:blockOf(z),state:stateSTP(z),pos:gridPos(z),
+ predicted:z>103,exception:!!EXC[z]}});
+
+// ---- Self tests ----
+function selfTests(){
+ const T=[];const add=(n,ok,d='')=>T.push({n,ok,d});
+ add('118 elements',EL.length===118,EL.length);
+ add('symbols unique',new Set(EL.map(e=>e.sym)).size===118);
+ let bad=[];EL.forEach(e=>{const o=config(e.z);const s=Object.values(o).reduce((a,b)=>a+b,0);if(s!==e.z)bad.push(e.sym)});
+ add('Σ subshell electrons = Z for every element',!bad.length,bad.join(','));
+ bad=[];EL.forEach(e=>{const o=config(e.z);for(const k in o){const l=LET.indexOf(k[1]);if(o[k]>2*(2*l+1))bad.push(e.sym+k)}});
+ add('subshell occupancy ≤ 2(2l+1)',!bad.length,bad.join(','));
+ bad=[];EL.forEach(e=>{const s=shells(e.z);for(const n in s)if(s[n]>2*n*n)bad.push(e.sym+n)});
+ add('shell occupancy ≤ 2n²',!bad.length,bad.join(','));
+ let ok=true;for(let n=1;n<=7;n++){let sum=0;for(let l=0;l<Math.min(n,4);l++)sum+=2*(2*l+1);if(n<=4&&sum!==2*n*n)ok=false}
+ add('Σ 2(2l+1) over l<n equals 2n² (n≤4)',ok);
+ const pos=new Set(EL.map(e=>e.pos.join(',')));
+ add('table positions unique',pos.size===118);
+ add('noble gases in column 18',[2,10,18,36,54,86,118].every(z=>gridPos(z)[1]===18));
+ const exp={1:'1s¹',2:'1s²',6:'[He] 2s² 2p²',8:'[He] 2s² 2p⁴',11:'[Ne] 3s¹',17:'[Ne] 3s² 3p⁵',24:'[Ar] 3d⁵ 4s¹',26:'[Ar] 3d⁶ 4s²',29:'[Ar] 3d¹⁰ 4s¹',46:'[Kr] 4d¹⁰',57:'[Xe] 5d¹ 6s²',58:'[Xe] 4f¹ 5d¹ 6s²',64:'[Xe] 4f⁷ 5d¹ 6s²',79:'[Xe] 4f¹⁴ 5d¹⁰ 6s¹',92:'[Rn] 5f³ 6d¹ 7s²',103:'[Rn] 5f¹⁴ 7s² 7p¹'};
+ for(const z in exp){const got=shorthand(+z);add(`${EL[z-1].sym} shorthand = ${exp[z]}`,got===exp[z],got)}
+ add('period/group of Fe = 4/8',EL[25].period===4&&EL[25].group===8);
+ add('block counts s=14,p=36,d=40,f=28 (118 elements, Lu/Lr counted as d)',
+  ['s','p','d','f'].map(b=>EL.filter(e=>e.block===b).length).join()==='14,36,40,28',
+  ['s','p','d','f'].map(b=>EL.filter(e=>e.block===b).length).join());
+ return T;
+}
+</script>
+<script id="core2">
+// ============ CORE 2: constants, orbitals, spectra (pure logic, no DOM) ============
+// ---- CODATA 2018 / SI-2019 constants ----
+const PC={h:6.62607015e-34,c:299792458,e:1.602176634e-19,Rinf:10973731.568160,mpOverMe:1836.15267343,mAlphaOverMe:7294.29954142,uOverMe:1822.888486209};
+PC.hc_eVnm=PC.h*PC.c/PC.e*1e9;           // eV·nm
+PC.eV_per_cm=PC.h*PC.c/PC.e*100;         // eV per cm^-1
+function nuclearMassMe(z){if(z===1)return PC.mpOverMe;if(z===2)return PC.mAlphaOverMe;return massNum(z)*PC.uOverMe-z}
+function RM(z){return PC.Rinf/(1+1/nuclearMassMe(z))}            // reduced-mass Rydberg constant, m^-1
+function hydIonCm(z){return RM(z)/100*z*z}                       // ionization energy of H-like ion, cm^-1
+function hydELevelCm(z,n){return hydIonCm(z)*(1-1/(n*n))}         // energy above ground, cm^-1 (non-relativistic, no fine structure)
+function hydLamVac(z,nu,nl){return 1e9/(RM(z)*z*z*(1/(nl*nl)-1/(nu*nu)))}  // nm
+// ---- air / vacuum wavelengths (Edlén 1966) ----
+function airIndex(v){const s2=(1e3/v)**2;return 1+(8342.13+2406030/(130-s2)+15997/(38.9-s2))*1e-8}
+function vacToAir(v){return v/airIndex(v)}
+function airToVac(a){let v=a;for(let i=0;i<8;i++)v=a*airIndex(v);return v}
+function nistWl(vac){return(vac>=200&&vac<=2000)?vacToAir(vac):vac}          // NIST convention: <200 vac, 200–2000 air, >2000 vac
+function reportedToVac(r){return(r>=200&&r<=2000)?airToVac(r):r}
+function photon(vac){return{nm:vac,thz:PC.c/vac*1e-3,eV:PC.hc_eVnm/vac,cm:1e7/vac,J:PC.h*PC.c/(vac*1e-9)}}
+function regionOf(vac){return vac<10?'xray':vac<380?'uv':vac<=750?'vis':'ir'}
+// ---- visible colour: CIE 1931 CMF analytic fit (Wyman, Sloan, Shirley 2013) → sRGB ----
+function wl2rgb(nm){
+ if(nm<380||nm>750)return null;
+ const g=(l,m,a,b)=>{const t=(l-m)/(l<m?a:b);return Math.exp(-.5*t*t)};
+ const X=1.056*g(nm,599.8,37.9,31.0)+0.362*g(nm,442.0,16.0,26.7)-0.065*g(nm,501.1,20.4,26.2);
+ const Y=0.821*g(nm,568.8,46.9,40.5)+0.286*g(nm,530.9,16.3,31.1);
+ const Z=1.217*g(nm,437.0,11.8,36.0)+0.681*g(nm,459.0,26.0,13.8);
+ let r=3.2406*X-1.5372*Y-0.4986*Z,gg=-0.9689*X+1.8758*Y+0.0415*Z,b=0.0557*X-0.2040*Y+1.0570*Z;
+ r=Math.max(0,r);gg=Math.max(0,gg);b=Math.max(0,b);const m=Math.max(r,gg,b)||1;
+ const gm=v=>{v/=m;return Math.round(255*(v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055))};
+ return[gm(r),gm(gg),gm(b)];
+}
+// ---- seeded RNG ----
+function mkRng(seed){let s=(seed>>>0)||1;return()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296}}
+// ---- real hydrogenic orbitals ----
+const SQ=Math.sqrt,PI=Math.PI;
+const ORB={
+ 0:[{name:'s',c:1/(2*SQ(PI)),m:0,poly:()=>1,ang:'1/(2√π)'}],
+ 1:[{name:'px',c:SQ(3/(4*PI)),m:1,poly:(x)=>x,ang:'√(3/4π) · x/r'},
+    {name:'py',c:SQ(3/(4*PI)),m:1,poly:(x,y)=>y,ang:'√(3/4π) · y/r'},
+    {name:'pz',c:SQ(3/(4*PI)),m:0,poly:(x,y,z)=>z,ang:'√(3/4π) · z/r'}],
+ 2:[{name:'dz²',c:SQ(5/(16*PI)),m:0,poly:(x,y,z)=>3*z*z-(x*x+y*y+z*z),ang:'√(5/16π) · (3z²−r²)/r²'},
+    {name:'dxz',c:SQ(15/(4*PI)),m:1,poly:(x,y,z)=>x*z,ang:'√(15/4π) · xz/r²'},
+    {name:'dyz',c:SQ(15/(4*PI)),m:1,poly:(x,y,z)=>y*z,ang:'√(15/4π) · yz/r²'},
+    {name:'dx²−y²',c:SQ(15/(16*PI)),m:2,poly:(x,y)=>x*x-y*y,ang:'√(15/16π) · (x²−y²)/r²'},
+    {name:'dxy',c:SQ(15/(4*PI)),m:2,poly:(x,y)=>x*y,ang:'√(15/4π) · xy/r²'}],
+ 3:[{name:'fz³',c:SQ(7/(16*PI)),m:0,poly:(x,y,z)=>z*(5*z*z-3*(x*x+y*y+z*z)),ang:'√(7/16π) · z(5z²−3r²)/r³'},
+    {name:'fxz²',c:SQ(21/(32*PI)),m:1,poly:(x,y,z)=>x*(5*z*z-(x*x+y*y+z*z)),ang:'√(21/32π) · x(5z²−r²)/r³'},
+    {name:'fyz²',c:SQ(21/(32*PI)),m:1,poly:(x,y,z)=>y*(5*z*z-(x*x+y*y+z*z)),ang:'√(21/32π) · y(5z²−r²)/r³'},
+    {name:'fxyz',c:SQ(105/(4*PI)),m:2,poly:(x,y,z)=>x*y*z,ang:'√(105/4π) · xyz/r³'},
+    {name:'fz(x²−y²)',c:SQ(105/(16*PI)),m:2,poly:(x,y,z)=>z*(x*x-y*y),ang:'√(105/16π) · z(x²−y²)/r³'},
+    {name:'fx(x²−3y²)',c:SQ(35/(32*PI)),m:3,poly:(x,y)=>x*(x*x-3*y*y),ang:'√(35/32π) · x(x²−3y²)/r³'},
+    {name:'fy(3x²−y²)',c:SQ(35/(32*PI)),m:3,poly:(x,y)=>y*(3*x*x-y*y),ang:'√(35/32π) · y(3x²−y²)/r³'}]
+};
+function angular(l,k,x,y,z){const r=Math.hypot(x,y,z);const o=ORB[l][k];if(r===0)return l===0?o.c:0;return o.c*o.poly(x/r,y/r,z/r)}
+function laguerre(k,a,x){if(k===0)return 1;let l0=1,l1=1+a-x;for(let i=1;i<k;i++){const l2=((2*i+1+a-x)*l1-(i+a)*l0)/(i+1);l0=l1;l1=l2}return l1}
+function fact(n){let f=1;for(let i=2;i<=n;i++)f*=i;return f}
+function radialR(n,l,r,Z=1){const rho=2*Z*r/n;const N=SQ(Math.pow(2*Z/n,3)*fact(n-l-1)/(2*n*fact(n+l)));return N*Math.exp(-rho/2)*Math.pow(rho,l)*laguerre(n-l-1,2*l+1,rho)}
+function psi(n,l,k,x,y,z){const r=Math.hypot(x,y,z);return radialR(n,l,r)*angular(l,k,x,y,z)}
+function radialNodes(n,l){ // radii in a0 (Z=1) where R_nl changes sign
+ const kk=n-l-1,out=[];if(kk<=0)return out;const f=r=>laguerre(kk,2*l+1,2*r/n);
+ const rmax=(4*n+2)*n/2,step=rmax/6000;let a=step,fa=f(a);
+ for(let r=2*step;r<=rmax;r+=step){const fb=f(r);if(fa*fb<0){let lo=r-step,hi=r;for(let i=0;i<50;i++){const m=(lo+hi)/2;if(f(lo)*f(m)<=0)hi=m;else lo=m}out.push((lo+hi)/2)}fa=fb}
+ return out;
+}
+function radialExtent(n,l,pc=0.9995){const rs=2.5*n*n+25,M=20000,dr=rs/M;let tot=0;const cum=new Float64Array(M);
+ for(let i=0;i<M;i++){const r=(i+.5)*dr;const R=radialR(n,l,r);tot+=R*R*r*r*dr;cum[i]=tot}
+ for(let i=0;i<M;i++)if(cum[i]>=pc*tot)return(i+1)*dr;return rs}
+function fieldGrid(n,l,k,N,Rext){const f=new Float32Array(N*N*N),h=2*Rext/(N-1);let i=0;
+ for(let a=0;a<N;a++){const z=-Rext+a*h;for(let b=0;b<N;b++){const y=-Rext+b*h;for(let c=0;c<N;c++){f[i++]=psi(n,l,k,-Rext+c*h,y,z)}}}return f}
+function probThreshold(f,p){let tot=0;const s=new Float32Array(f.length);for(let i=0;i<f.length;i++){s[i]=f[i]*f[i];tot+=s[i]}
+ s.sort();let acc=0;for(let i=s.length-1;i>=0;i--){acc+=s[i];if(acc>=p*tot)return Math.sqrt(s[i])}return 0}
+// marching tetrahedra (6 tets per cube sharing diagonal 0–6): returns Float32Array of triangle vertices
+const TETS=[[0,6,1,2],[0,6,2,3],[0,6,3,7],[0,6,7,4],[0,6,4,5],[0,6,5,1]];
+const CO=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+function isoSurface(f,N,Rext,level,sgn=1){
+ const h=2*Rext/(N-1),N2=N*N,out=[],v=new Float64Array(8),idx=new Int32Array(8);
+ const P=(q,a,b,c)=>[-Rext+(c+CO[q][0])*h,-Rext+(b+CO[q][1])*h,-Rext+(a+CO[q][2])*h];
+ for(let a=0;a<N-1;a++)for(let b=0;b<N-1;b++)for(let c=0;c<N-1;c++){
+  const base=a*N2+b*N+c;idx[0]=base;idx[1]=base+1;idx[2]=base+N+1;idx[3]=base+N;idx[4]=base+N2;idx[5]=base+N2+1;idx[6]=base+N2+N+1;idx[7]=base+N2+N;
+  let mn=1e30,mx=-1e30;for(let q=0;q<8;q++){const x=sgn*f[idx[q]];v[q]=x;if(x<mn)mn=x;if(x>mx)mx=x}
+  if(mn>=level||mx<level)continue;
+  for(const t of TETS){
+   const ins=[],outs=[];for(const q of t)(v[q]>=level?ins:outs).push(q);
+   if(!ins.length||!outs.length)continue;
+   const E=(i,o)=>{const t0=(level-v[i])/(v[o]-v[i]);const A=P(i,a,b,c),B=P(o,a,b,c);return[A[0]+(B[0]-A[0])*t0,A[1]+(B[1]-A[1])*t0,A[2]+(B[2]-A[2])*t0]};
+   if(ins.length===1){out.push(...E(ins[0],outs[0]),...E(ins[0],outs[1]),...E(ins[0],outs[2]))}
+   else if(ins.length===3){out.push(...E(ins[0],outs[0]),...E(ins[1],outs[0]),...E(ins[2],outs[0]))}
+   else{const[A,B]=ins,[C,D]=outs;const p1=E(A,C),p2=E(A,D),p3=E(B,D),p4=E(B,C);out.push(...p1,...p2,...p3,...p1,...p3,...p4)}
+  }}
+ return new Float32Array(out);
+}
+function sampleTri(f,N,Rext,x,y,z){const h=2*Rext/(N-1);let fx=(x+Rext)/h,fy=(y+Rext)/h,fz=(z+Rext)/h;
+ fx=Math.max(0,Math.min(N-1.001,fx));fy=Math.max(0,Math.min(N-1.001,fy));fz=Math.max(0,Math.min(N-1.001,fz));
+ const i=Math.floor(fx),j=Math.floor(fy),k=Math.floor(fz),tx=fx-i,ty=fy-j,tz=fz-k,N2=N*N,b=k*N2+j*N+i;
+ const g=(o)=>f[b+o];
+ const c00=g(0)*(1-tx)+g(1)*tx,c10=g(N)*(1-tx)+g(N+1)*tx,c01=g(N2)*(1-tx)+g(N2+1)*tx,c11=g(N2+N)*(1-tx)+g(N2+N+1)*tx;
+ return(c00*(1-ty)+c10*ty)*(1-tz)+(c01*(1-ty)+c11*ty)*tz}
+function isoNormals(pos,f,N,Rext,sgn){const h=2*Rext/(N-1),nm=new Float32Array(pos.length);
+ for(let i=0;i<pos.length;i+=3){const x=pos[i],y=pos[i+1],z=pos[i+2];
+  let gx=sampleTri(f,N,Rext,x+h,y,z)-sampleTri(f,N,Rext,x-h,y,z),gy=sampleTri(f,N,Rext,x,y+h,z)-sampleTri(f,N,Rext,x,y-h,z),gz=sampleTri(f,N,Rext,x,y,z+h)-sampleTri(f,N,Rext,x,y,z-h);
+  const L=Math.hypot(gx,gy,gz)||1;nm[i]=-sgn*gx/L;nm[i+1]=-sgn*gy/L;nm[i+2]=-sgn*gz/L}return nm}
+function angularNodeSurface(l,k,N=34){ // zero set of the angular polynomial inside the unit sphere
+ if(l===0)return new Float32Array(0);const f=new Float32Array(N*N*N),h=2/(N-1);let i=0;const o=ORB[l][k];
+ for(let a=0;a<N;a++)for(let b=0;b<N;b++)for(let c=0;c<N;c++)f[i++]=o.poly(-1+c*h,-1+b*h,-1+a*h);
+ const tri=isoSurface(f,N,1,1e-6),keep=[];
+ for(let t=0;t<tri.length;t+=9){let cx=0,cy=0,cz=0;for(let q=0;q<3;q++){cx+=tri[t+3*q];cy+=tri[t+3*q+1];cz+=tri[t+3*q+2]}
+  if(Math.hypot(cx/3,cy/3,cz/3)<=1)for(let q=0;q<9;q++)keep.push(tri[t+q])}
+ return new Float32Array(keep);
+}
+// ---- Hund / Pauli orbital boxes ----
+function hundBoxes(z,withEmpty=false){
+ const cfg=config(z),out=[],keys=sortKeys(cfg);
+ const mk=(n,l,e)=>{const m=2*l+1,occ=new Array(m).fill(0);let left=e;for(let i=0;i<m&&left>0;i++){occ[i]=1;left--}for(let i=0;i<m&&left>0;i++){occ[i]=2;left--}return{key:n+LET[l],n,l,e,occ,empty:e===0}};
+ for(const k of keys)out.push(mk(+k[0],LET.indexOf(k[1]),cfg[k]));
+ if(withEmpty){const nmax=Math.max(...keys.map(k=>+k[0]));
+  for(let n=1;n<=nmax;n++)for(let l=0;l<Math.min(n,4);l++){const key=n+LET[l];if(!cfg[key])out.push(mk(n,l,0))}
+  out.sort((a,b)=>a.n-b.n||a.l-b.l)}
+ return out;
+}
+function spinCounts(z){let up=0,pair=0;hundBoxes(z).forEach(s=>s.occ.forEach(o=>{if(o===1)up++;if(o===2)pair+=2}));return{unpaired:up,paired:pair}}
+// ---- Slater's rules (educational effective-charge model) ----
+const SL_ORDER=['1s','2sp','3sp','3d','4sp','4d','4f','5sp','5d','5f','6sp','6d','6f','7sp','7d','7f'];
+const NSTAR={1:1,2:2,3:3,4:3.7,5:4.0,6:4.2,7:4.3};
+const slGrp=(n,l)=>l<=1?n+'sp':n+LET[l];
+function slater(z){
+ const cfg=config(z),res={},gc={};
+ for(const k in cfg){const g=slGrp(+k[0],LET.indexOf(k[1]));gc[g]=(gc[g]||0)+cfg[k]}
+ for(const k in cfg){const n=+k[0],l=LET.indexOf(k[1]),g=slGrp(n,l),gi=SL_ORDER.indexOf(g);
+  let S=(gc[g]-1)*(g==='1s'?0.30:0.35);
+  for(const g2 in gc){if(g2===g)continue;const gj=SL_ORDER.indexOf(g2);if(gj>gi)continue;const n2=+g2[0];
+   S+=gc[g2]*(l<=1?(n2===n-1?0.85:1.0):1.0)}
+  const zeff=z-S;res[k]={zeff,S,nstar:NSTAR[n],rpeak:NSTAR[n]*NSTAR[n]/zeff,rmean:NSTAR[n]*(NSTAR[n]+0.5)/zeff}}
+ return res;
+}
+function gammaSample(k,rand){const d=k-1/3,c=1/SQ(9*d);
+ for(;;){let x,v;do{const u1=rand(),u2=rand();x=SQ(-2*Math.log(u1||1e-12))*Math.cos(2*PI*u2);v=1+c*x}while(v<=0);v=v*v*v;const u=rand();
+  if(Math.log(u||1e-12)<.5*x*x+d-d*v+d*Math.log(v))return d*v}}
+const angMaxCache={};
+function angMax(l,k){const key=l+','+k;if(angMaxCache[key])return angMaxCache[key];let m=0;const M=60;
+ for(let i=0;i<=M;i++){const th=PI*i/M;for(let j=0;j<2*M;j++){const ph=PI*j/M;const y=angular(l,k,Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th));m=Math.max(m,y*y)}}
+ return(angMaxCache[key]=m*1.08)}
+function angSample(l,k,rand){const mx=angMax(l,k);for(;;){const z=2*rand()-1,ph=2*PI*rand(),s=SQ(1-z*z),x=s*Math.cos(ph),y=s*Math.sin(ph);const a=angular(l,k,x,y,z);if(a*a>=rand()*mx)return[x,y,z]}}
+function cloudFor(z,per=130,cap=900){
+ const sl=slater(z),boxes=hundBoxes(z),rand=mkRng(z*977+3),out=[];
+ for(const b of boxes){const s=sl[b.key],npts=Math.min(cap,Math.round(per*b.e)),R=new Float32Array(npts),U=new Float32Array(npts*3);
+  const tot=b.occ.reduce((a,c)=>a+c,0);
+  for(let i=0;i<npts;i++){R[i]=gammaSample(2*s.nstar+1,rand)*s.nstar/(2*s.zeff);
+   let u=rand()*tot,k=0;for(;k<b.occ.length-1;k++){if(u<b.occ[k])break;u-=b.occ[k]}
+   const d=angSample(b.l,k,rand);U[3*i]=d[0];U[3*i+1]=d[1];U[3*i+2]=d[2]}
+  out.push({key:b.key,n:b.n,l:b.l,e:b.e,R,U,rpeak:s.rpeak,zeff:s.zeff})}
+ return out;
+}
+// ---- selection rules (electric dipole, E1) ----
+const SUPMAP={'¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+function parseTerm(t){if(!t)return null;const s=t.replace(/[¹²³⁴⁵⁶⁷⁸⁹]/g,c=>SUPMAP[c]);const m=s.match(/(\d)\s*([SPDFGHIKLMNO])/);if(!m)return null;
+ return{S:(+m[1]-1)/2,L:'SPDFGHIKLMNO'.indexOf(m[2]),odd:/[°*]/.test(t)}}
+function parseJ(j){if(j==null||j==='')return null;const s=String(j).trim();if(s.includes('/')){const[a,b]=s.split('/');return +a/+b}const v=parseFloat(s);return isNaN(v)?null:v}
+function e1Check(lo,up){
+ const notes=[];let verdict='allowed';const tl=parseTerm(lo.term),tu=parseTerm(up.term),jl=parseJ(lo.J),ju=parseJ(up.J);
+ if(tl&&tu){if(tl.odd===tu.odd){verdict='forbidden';notes.push(L2('Parity does not change (E1 requires even↔odd).','پاریته تغییر نمی‌کند (E1 نیازمند تغییر زوج↔فرد است).'))}else notes.push(L2('Parity changes ✓','پاریته تغییر می‌کند ✓'))}
+ else{verdict='unknown';notes.push(L2('Parity unknown (term missing).','پاریته نامشخص (عبارت طیفی موجود نیست).'))}
+ if(jl!=null&&ju!=null){const dj=Math.abs(ju-jl);if(dj>1||(ju===0&&jl===0)){verdict='forbidden';notes.push(`ΔJ = ${ju-jl} ✗ (J 0↔0 or |ΔJ|>1)`)}else notes.push(`ΔJ = ${ju-jl} ✓`)}
+ if(tl&&tu&&verdict!=='forbidden'){const dL=Math.abs(tu.L-tl.L),dS=tu.S-tl.S;
+  if(dL>1||(tu.L===0&&tl.L===0)){verdict='forbidden';notes.push(`ΔL = ${tu.L-tl.L} ✗ (LS coupling)`)}else notes.push(`ΔL = ${tu.L-tl.L} ✓`);
+  if(dS!==0&&verdict==='allowed'){verdict='unlikely';notes.push(`ΔS = ${dS} ✗ ${L2('(intercombination line: weak, only possible when LS coupling breaks down)','(خط بین‌چندگانگی: ضعیف؛ فقط وقتی جفت‌شدگی LS شکسته شود)')}`)}else if(dS===0)notes.push('ΔS = 0 ✓')}
+ return{verdict,notes};
+}
+function L2(en,fa){return(typeof S!=='undefined'&&S.lang==='fa')?fa:en}
+function hE1(l1,l2){const d=Math.abs(l1-l2);return{verdict:d===1?'allowed':'forbidden',notes:[`Δl = ${l1-l2} ${d===1?'✓':'✗'} (E1: Δl = ±1)`]}}
+// ---- spectral datasets ----
+const ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV','XXV','XXVI','XXVII','XXVIII','XXIX','XXX'];
+const roman=n=>ROMAN[n]||('+'+(n-1));
+const SERIES=['','Lyman','Balmer','Paschen','Brackett','Pfund','Humphreys'];
+function mkHydrogenic(z){
+ const sym=EL[z-1].sym,lines=[];
+ for(let nl=1;nl<=6;nl++)for(let nu=nl+1;nu<=nl+14;nu++){const vac=hydLamVac(z,nu,nl);
+  lines.push({vac,rep:nistWl(vac),intens:null,type:'E1 (n→n′, computed)',series:SERIES[nl],meta:{nu,nl},
+   up:{conf:String(nu),term:'',J:null,E:hydELevelCm(z,nu)},lo:{conf:String(nl),term:'',J:null,E:hydELevelCm(z,nl)}})}
+ const levels=[];for(let n=1;n<=8;n++)for(let l=0;l<Math.min(n,4);l++)levels.push({label:n+LET[l],n,l,E:hydELevelCm(z,n),hyd:true,odd:l%2===1});
+ return{id:'hyd-'+z,z,label:z===1?'H I':`${sym} ${roman(z)}`,sub:z===1?'neutral hydrogen atom':`hydrogen-like ion ${sym}${z>2?'^'+(z-1)+'+':'⁺'}`,kind:'computed',hydrogenic:true,
+  source:`Computed: Rydberg formula with reduced-mass Rydberg constant (CODATA 2018 R∞, nuclear mass correction). Non-relativistic, no fine structure/Lamb shift/hyperfine. ${z>20?'Relativistic errors grow as Z⁴; treat values for high Z as rough.':''} Relative intensities are not computed.`,
+  medium:'Vacuum wavelengths computed; NIST-style air values via Edlén (1966) for 200–2000 nm.',lines,levels,limit:hydIonCm(z)};
+}
+const H_REF=[{name:'Lyman α',nu:2,nl:1,val:121.567,med:'vac'},{name:'Lyman β',nu:3,nl:1,val:102.572,med:'vac'},{name:'Balmer α (Hα)',nu:3,nl:2,val:656.28,med:'air'},{name:'Balmer β (Hβ)',nu:4,nl:2,val:486.13,med:'air'},{name:'Balmer γ (Hγ)',nu:5,nl:2,val:434.05,med:'air'},{name:'Balmer δ (Hδ)',nu:6,nl:2,val:410.17,med:'air'},{name:'Paschen α',nu:4,nl:3,val:1875.10,med:'air',tol:0.05}];
+function mkBundled(){
+ const bl=(rep,lc,lt,uc,ut,note)=>({rep,vac:reportedToVac(rep),intens:null,type:'E1',up:{conf:uc,term:ut,J:null,E:null},lo:{conf:lc,term:lt,J:null,E:null},note});
+ const he={id:'ref-He-I',z:2,label:'He I',sub:'neutral helium (selected well-known lines only)',kind:'reference',
+  source:'Typed from standard literature/textbook line tables (air wavelengths, 3 decimals). NOT a NIST ASD export and NOT a complete spectrum; verify with an ASD import. Intensities and level energies not included.',
+  medium:'Air wavelengths as typed; vacuum values derived with Edlén (1966).',levels:null,
+  lines:[bl(388.865,'1s2s','³S','1s3p','³P°'),bl(447.148,'1s2p','³P°','1s4d','³D'),bl(471.314,'1s2p','³P°','1s4s','³S'),bl(492.193,'1s2p','¹P°','1s4d','¹D'),bl(501.568,'1s2s','¹S','1s3p','¹P°'),bl(587.562,'1s2p','³P°','1s3d','³D','He D3 line'),bl(667.815,'1s2p','¹P°','1s3d','¹D'),bl(706.519,'1s2p','³P°','1s3s','³S'),bl(728.135,'1s2p','¹P°','1s3s','¹S')]};
+ const nl=(rep,Ek,Jk,note)=>({rep,vac:reportedToVac(rep),intens:null,type:'E1',up:{conf:'3p',term:'²P°',J:Jk,E:Ek},lo:{conf:'3s',term:'²S',J:'1/2',E:0},note});
+ const na={id:'ref-Na-I',z:11,label:'Na I',sub:'neutral sodium (D lines only)',kind:'reference',
+  source:'Typed from standard tables: Na D lines (air) and the 3s/3p level energies (cm⁻¹). Self-consistency of wavelengths vs levels is verified in the self-tests. NOT a NIST ASD export; only the D doublet is included.',
+  medium:'Air wavelengths as typed; vacuum from Edlén (1966).',
+  levels:[{label:'3s ²S 1/2',conf:'3s',term:'²S',J:'1/2',E:0},{label:'3p ²P° 1/2',conf:'3p',term:'²P°',J:'1/2',E:16956.170},{label:'3p ²P° 3/2',conf:'3p',term:'²P°',J:'3/2',E:16973.366}],limit:41449.451,
+  lines:[nl(588.995,16973.366,'3/2','D2'),nl(589.592,16956.170,'1/2','D1')]};
+ return[he,na];
+}
+// ---- NIST ASD export parser (lines output; CSV or tab-delimited) ----
+function parseNist(text){
+ const rows=text.replace(/\r/g,'').split('\n').filter(l=>l.trim());if(rows.length<2)return{error:'No data rows found.'};
+ const delim=rows[0].includes('\t')?'\t':',';
+ const split=l=>{if(delim==='\t')return l.split('\t');const o=[];let c='',q=false;for(const ch of l){if(ch==='"')q=!q;else if(ch===','&&!q){o.push(c);c=''}else c+=ch}o.push(c);return o};
+ const clean=s=>(s||'').replace(/"/g,'').replace(/^=/,'').trim();
+ let hi=rows.findIndex(r=>/wl|wn|wavelength/i.test(r));if(hi<0)return{error:'Header row with wavelength column not found.'};
+ const head=split(rows[hi]).map(h=>clean(h).toLowerCase());
+ const col=re=>head.findIndex(h=>re.test(h));
+ const C={ov:col(/obs_wl_vac/),oa:col(/obs_wl_air/),rv:col(/ritz_wl_vac/),ra:col(/ritz_wl_air/),wn:col(/^wn/),int:col(/^intens/),aki:col(/^aki/),ei:col(/^ei\(/),ek:col(/^ek\(/),
+  ci:col(/^conf_i/),ti:col(/^term_i/),ji:col(/^j_i/),ck:col(/^conf_k/),tk:col(/^term_k/),jk:col(/^j_k/),ty:col(/^type/),el:col(/^element/),sp:col(/^sp_num/)};
+ if(C.ov<0&&C.oa<0&&C.rv<0&&C.ra<0&&C.wn<0)return{error:'No wavelength/wavenumber column recognised.'};
+ const num=s=>{const m=String(s||'').replace(/[\[\]()?*]/g,'').match(/-?\d+\.?\d*(e[+-]?\d+)?/i);return m?parseFloat(m[0]):NaN};
+ const g=(r,i)=>i>=0?clean(r[i]):'';
+ const groups={};let used=0,skipped=0;
+ for(let i=hi+1;i<rows.length;i++){const r=split(rows[i]);let vac=NaN,rep=NaN,src='obs';
+  const tryc=(ci,isVac,s)=>{if(!isNaN(vac)||ci<0)return;const v=num(g(r,ci));if(!isNaN(v)&&v>0){vac=isVac?v:reportedToVac(v);rep=isVac?nistWl(v):v;src=s}};
+  tryc(C.ov,true,'obs');tryc(C.oa,false,'obs');tryc(C.rv,true,'ritz');tryc(C.ra,false,'ritz');
+  if(isNaN(vac)&&C.wn>=0){const w=num(g(r,C.wn));if(!isNaN(w)&&w>0){vac=1e7/w;rep=nistWl(vac);src='wn'}}
+  if(isNaN(vac)){skipped++;continue}
+  const el=g(r,C.el),sp=parseInt(g(r,C.sp)),key=(el&&!isNaN(sp))?el+'|'+sp:'?|0';
+  (groups[key]=groups[key]||[]).push({vac,rep,src,intens:(()=>{const v=num(g(r,C.int));return isNaN(v)?null:v})(),aki:(()=>{const v=num(g(r,C.aki));return isNaN(v)?null:v})(),
+   type:g(r,C.ty)||'E1',up:{conf:g(r,C.ck),term:g(r,C.tk),J:g(r,C.jk)||null,E:(()=>{const v=num(g(r,C.ek));return isNaN(v)?null:v})()},
+   lo:{conf:g(r,C.ci),term:g(r,C.ti),J:g(r,C.ji)||null,E:(()=>{const v=num(g(r,C.ei));return isNaN(v)?null:v})()}});used++}
+ const out=[];
+ for(const key in groups){const[el,sp]=key.split('|');const zi=EL.findIndex(e=>e.sym===el);const lines=groups[key];
+  const lv=new Map();lines.forEach(l=>[l.lo,l.up].forEach(s=>{if(s.E!=null){const id=[s.E,s.conf,s.term,s.J].join('|');if(!lv.has(id))lv.set(id,{label:`${s.conf} ${s.term} ${s.J||''}`.trim(),conf:s.conf,term:s.term,J:s.J,E:s.E})}}));
+  const label=zi>=0?`${el} ${roman(+sp)}`:'Imported';
+  out.push({id:'imp-'+label.replace(/\s/g,'_'),z:zi>=0?zi+1:0,label,sub:'NIST ASD import',kind:'imported',
+   source:'Imported from a user-supplied NIST Atomic Spectra Database lines export. Values are as exported (observed wavelength preferred; Ritz wavelength used where no observed value; lines flagged accordingly).',
+   medium:'Wavelength medium follows NIST convention (<200 nm vacuum, 200–2000 nm air, >2000 nm vacuum); converted to vacuum internally.',
+   lines:lines.sort((a,b)=>a.vac-b.vac),levels:[...lv.values()].sort((a,b)=>a.E-b.E)})}
+ return{datasets:out,used,skipped,columns:Object.keys(C).filter(k=>C[k]>=0)};
+}
+// ---- self tests (v2) ----
+function selfTests2(){
+ const T=[];const add=(n,ok,d='')=>T.push({n,ok,d:String(d)});const near=(a,b,t)=>Math.abs(a-b)<=t;
+ add('CODATA: hc = 1239.84198 eV·nm',near(PC.hc_eVnm,1239.84198,1e-4),PC.hc_eVnm);
+ add('R_H (reduced mass) ≈ 10 967 758 m⁻¹',near(RM(1),10967758.3,1.5),RM(1));
+ for(const r of H_REF){const vac=hydLamVac(1,r.nu,r.nl);const c=r.med==='air'?vacToAir(vac):vac;add(`H ${r.name}: computed ${c.toFixed(3)} vs reference ${r.val} (${r.med}) within ${r.tol||0.01} nm`,near(c,r.val,r.tol||0.01),(c-r.val).toFixed(4))}
+ add('He II Lyα ≈ 30.378 nm (vac)',near(hydLamVac(2,2,1),30.378,0.005),hydLamVac(2,2,1));
+ add('He II 4→3 ≈ 468.57 nm (air)',near(vacToAir(hydLamVac(2,4,3)),468.57,0.02),vacToAir(hydLamVac(2,4,3)));
+ const nad=[[588.995,16973.366],[589.592,16956.170]];
+ for(const[w,E]of nad)add(`Na D ${w} nm (air) matches level energy ${E} cm⁻¹ within 0.003 nm`,near(vacToAir(1e7/E),w,0.003),vacToAir(1e7/E));
+ add('Edlén round trip air↔vac',near(airToVac(vacToAir(500)),500,1e-9));
+ add('E=hc/λ: 656.4696 nm vac → 1.8887 eV',near(photon(656.4696).eV,1.8887,2e-4),photon(656.4696).eV);
+ add('c=λν: 589 nm → 509 THz',near(photon(589).thz,508.97,0.05),photon(589).thz);
+ // radial / angular normalisation
+ let ok=true,bad=[];
+ for(let n=1;n<=7;n++)for(let l=0;l<Math.min(n,4);l++){const rs=2.5*n*n+40,M=60000,dr=rs/M;let s=0;for(let i=0;i<M;i++){const r=(i+.5)*dr,R=radialR(n,l,r);s+=R*R*r*r*dr}if(Math.abs(s-1)>2e-3){ok=false;bad.push(n+LET[l]+':'+s.toFixed(4))}}
+ add('∫R²r²dr = 1 for every (n,l), n ≤ 7, l ≤ 3',ok,bad.join(' '));
+ const nt=60,np=120,A=[];for(let l=0;l<4;l++)for(let k=0;k<ORB[l].length;k++)A.push([l,k]);
+ const G=A.map(()=>new Float64Array(0));const M=A.length,I=Array.from({length:M},()=>new Float64Array(M));
+ for(let i=0;i<nt;i++){const th=PI*(i+.5)/nt,w=Math.sin(th)*(PI/nt)*(2*PI/np);for(let j=0;j<np;j++){const ph=2*PI*(j+.5)/np,x=Math.sin(th)*Math.cos(ph),y=Math.sin(th)*Math.sin(ph),z=Math.cos(th);
+  const v=A.map(([l,k])=>angular(l,k,x,y,z));for(let a=0;a<M;a++)for(let b=a;b<M;b++)I[a][b]+=v[a]*v[b]*w}}
+ let dg=0,off=0;for(let a=0;a<M;a++){dg=Math.max(dg,Math.abs(I[a][a]-1));for(let b=a+1;b<M;b++)off=Math.max(off,Math.abs(I[a][b]))}
+ add(`16 real orbitals (s,p,d,f): ∫Y²dΩ=1 (max dev ${dg.toExponential(1)}) and mutually orthogonal (max |∫YiYj| ${off.toExponential(1)})`,dg<2e-3&&off<2e-3);
+ ok=true;bad=[];for(let n=1;n<=7;n++)for(let l=0;l<Math.min(n,4);l++){const c=radialNodes(n,l).length;if(c!==n-l-1){ok=false;bad.push(n+LET[l]+':'+c)}}
+ add('radial node count = n − l − 1 for all orbitals',ok,bad.join(' '));
+ add('2s radial node at r = 2 a₀',near(radialNodes(2,0)[0],2,1e-3));
+ const n3=radialNodes(3,0);add('3s radial nodes at 1.90 and 7.10 a₀',near(n3[0],1.902,.01)&&near(n3[1],7.098,.01),n3.join(','));
+ // isosurface / threshold
+ const N=60,R=radialExtent(1,0),f=fieldGrid(1,0,0,N,R),c=probThreshold(f,0.9);
+ const rIso=-Math.log(c*SQ(PI)*1)  ;// ψ1s=e^{-r}/√π → r=-ln(c√π)
+ add('1s 90 % probability threshold gives radius ≈ 2.67 a₀',near(-Math.log(c*SQ(PI)),2.67,0.12),(-Math.log(c*SQ(PI))).toFixed(3));
+ const tri=isoSurface(f,N,R,c);let me=0;for(let i=0;i<tri.length;i+=3){me+=Math.abs(Math.hypot(tri[i],tri[i+1],tri[i+2])-(-Math.log(c*SQ(PI))))}me/=tri.length/3;
+ add('marching-tetrahedra 1s surface: mean radial error < 0.05 a₀ ('+(tri.length/9)+' triangles)',me<0.05&&tri.length>1000,me.toFixed(4));
+ const f2=fieldGrid(2,1,2,N,radialExtent(2,1)),t2=isoSurface(f2,N,radialExtent(2,1),probThreshold(f2,.9)),t2n=isoSurface(f2,N,radialExtent(2,1),probThreshold(f2,.9),-1);
+ add('2pz: two lobes (+ surface and − surface both non-empty)',t2.length>600&&t2n.length>600);
+ add('angular node surface exists for p,d,f (l>0) and not for s',[0,1,2,3].every(l=>(angularNodeSurface(l,ORB[l].length-1).length>0)===(l>0)));
+ // Hund / Pauli
+ const U={1:1,2:0,6:2,7:3,8:2,11:1,24:6,25:5,26:4,29:1,30:0,64:8};
+ let bu=[];for(const z in U){const s=spinCounts(+z);if(s.unpaired!==U[z]||s.paired+s.unpaired!==+z)bu.push(EL[z-1].sym+':'+s.unpaired)}
+ add('Hund/Pauli unpaired counts (H1 He0 C2 N3 O2 Na1 Cr6 Mn5 Fe4 Cu1 Zn0 Gd8) and paired+unpaired = Z',!bu.length,bu.join(' '));
+ const cb=hundBoxes(6).find(b=>b.key==='2p').occ.join(),ob=hundBoxes(8).find(b=>b.key==='2p').occ.join();
+ add('C 2p boxes = 1,1,0 ; O 2p boxes = 2,1,1',cb==='1,1,0'&&ob==='2,1,1',cb+' | '+ob);
+ add('all 118 elements: Hund occupancy sums to Z',EL.every(e=>hundBoxes(e.z).reduce((a,s)=>a+s.occ.reduce((x,y)=>x+y,0),0)===e.z));
+ // Slater
+ const sf=slater(26),sn=slater(11),sc=slater(17);
+ add("Slater's rules: Fe 4s Z*=3.75, 3d Z*=6.25; Na 3s 2.20; Cl 3p 6.10",near(sf['4s'].zeff,3.75,1e-9)&&near(sf['3d'].zeff,6.25,1e-9)&&near(sn['3s'].zeff,2.2,1e-9)&&near(sc['3p'].zeff,6.1,1e-9),[sf['4s'].zeff,sf['3d'].zeff,sn['3s'].zeff,sc['3p'].zeff].join(' '));
+ const cl=cloudFor(26),c4=cl.find(x=>x.key==='4s');const mr=c4.R.reduce((a,b)=>a+b,0)/c4.R.length;
+ add('Fe 4s sampled mean radius matches analytic n*(n*+½)/Z* within 6 %',near(mr/slater(26)['4s'].rmean,1,0.06),(mr/slater(26)['4s'].rmean).toFixed(3));
+ // selection rules
+ const he=mkBundled()[0],naD=mkBundled()[1];
+ add('all bundled He I and Na I lines pass E1 rules',[...he.lines,...naD.lines].every(l=>e1Check(l.lo,l.up).verdict==='allowed'));
+ add('E1: 3s ²S → 4s ²S forbidden (parity); 3p ²P° → 3p ²P° forbidden',e1Check({term:'²S'},{term:'²S'}).verdict==='forbidden'&&e1Check({term:'²P°'},{term:'²P°'}).verdict==='forbidden');
+ add('E1: ΔS≠0 flagged as intercombination (He 1s2s ³S ↔ 1s2p ¹P°)',e1Check({term:'³S'},{term:'¹P°'}).verdict==='unlikely');
+ add('H: 2p→1s allowed, 2s→1s forbidden, 3d→2s forbidden',hE1(1,0).verdict==='allowed'&&hE1(0,0).verdict==='forbidden'&&hE1(2,0).verdict==='forbidden');
+ // datasets / parser / colour
+ const h=mkHydrogenic(1);add('H I dataset: Balmer lines 3→2 … 16→2 in 364–657 nm',h.lines.filter(l=>l.meta.nl===2).every(l=>l.vac>364&&l.vac<657)&&h.lines.length===84,h.lines.length);
+ add('Balmer series limit → 364.5 nm (vac)',near(1e9/(RM(1)/4),364.5,.3));
+ const sample='element\tsp_num\tobs_wl_air(nm)\tintens\tconf_i\tterm_i\tJ_i\tconf_k\tterm_k\tJ_k\tEi(cm-1)\tEk(cm-1)\tType\n="Na"\t="1"\t="588.9950"\t="9000"\t="3s"\t="2S"\t="1/2"\t="3p"\t="2P*"\t="3/2"\t="0.000"\t="16973.366"\t=""\n="Na"\t="1"\t="589.5924"\t="5000 bl"\t="3s"\t="2S"\t="1/2"\t="3p"\t="2P*"\t="1/2"\t="0.000"\t="16956.170"\t=""\n';
+ const pr=parseNist(sample);const d0=pr.datasets&&pr.datasets[0];
+ add('NIST-format parser (synthetic sample): 2 Na I lines, levels derived, air→vacuum',!!d0&&d0.label==='Na I'&&d0.lines.length===2&&d0.levels.length===3&&near(d0.lines[0].vac,airToVac(588.995),1e-9)&&d0.lines[0].intens===9000,pr.error||JSON.stringify(d0&&d0.lines.length));
+ add('parsed Na I lines pass E1 rules (term "2P*" odd parity)',!!d0&&d0.lines.every(l=>e1Check(l.lo,l.up).verdict==='allowed'));
+ add('wavelength→colour: null outside 380–750; 650 nm red-dominant; 460 nm blue-dominant',wl2rgb(300)===null&&wl2rgb(800)===null&&wl2rgb(650)[0]>wl2rgb(650)[2]+100&&wl2rgb(460)[2]>wl2rgb(460)[0]+100);
+ return T;
+}
+const _selfTests1=selfTests;
+selfTests=function(){return _selfTests1().concat(selfTests2())};
+
+</script>
+
+<!-- ================= UI ================= -->
+<script id="ui">
+const $=s=>document.querySelector(s);
+const S={sel:1,lang:'en',theme:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark',cat:null,block:null,q:'',colorBy:'category',tab:'table',mode:'bohr',cmp:[],playing:true};
+
+const I18={
+en:{title:'Atomic Lab · Atoms, Orbitals & Spectra',search:'Search name, symbol, number',
+ nav:{table:'Periodic Table',atom:'Atomic Structure',compare:'Compare',sources:'Sources & Tests'},
+ all:'All',cats:'Category',blocks:'Block',colorBy:'Color by',cb:{category:'Category',block:'Block',chi:'Electronegativity (Pauling)',mass:'Atomic mass'},
+ z:'Atomic number',sym:'Symbol',mass:'Standard atomic weight',p:'Protons',n:'Neutrons (approx.)',e:'Electrons (neutral)',cfg:'Electron configuration',nob:'Noble-gas shorthand',
+ per:'Period',grp:'Group',blk:'Block',cat:'Category',chi:'Electronegativity (Pauling)',state:'State at standard conditions',
+ states:{gas:'Gas',liquid:'Liquid',solid:'Solid',unknown:'Unknown / not established'},
+ shells:'Electrons per shell (n)',subs:'Electrons per subshell',na:'not loaded',
+ pending:'Not shown yet (no verified dataset loaded, so nothing is guessed): ionization energies, atomic radius, electron affinity, oxidation states, melting/boiling point, density, discovery data, isotopes.',
+ addCmp:'Add to compare',rmCmp:'Remove from compare',cmpFull:'Compare holds at most 4 elements.',open3d:'Open 3D atom',
+ modes:{bohr:'Bohr model',shell:'Electron shells',sub:'Subshells'},
+ play:'Pause',resume:'Animate',reset:'Reset view',hint:'Drag: rotate · wheel / pinch: zoom · right-drag or Shift-drag: pan',
+ notes:{bohr:'Simplified pedagogical model. Electrons on circles are a teaching picture; real electrons have no trajectories. The quantum orbital model arrives in Stage 2.',
+  shell:'Each sphere marks a principal shell (n). Electrons are not drawn here because they have no definite position inside a shell.',
+  sub:'Each sphere is one occupied subshell (n, l). Sizes are schematic: they are not real radii or energies.'},
+ nucleusNote:'Nucleus is drawn schematically, far larger than true scale. Neutron count N = A − Z with A = rounded standard atomic weight (or listed mass number), which is not always the most abundant isotope; the isotope module comes later.',
+ aboutH:'What am I looking at?',
+ about:(e,o)=>`<p>This is a neutral <b>${e.en}</b> atom: ${e.z} protons in the nucleus balanced by ${e.z} electrons. The electrons are arranged in ${Object.keys(shells(e.z)).length} principal shell(s); the maximum for shell n is 2n².</p><p>The <b>Bohr model</b> pictures electrons on circular orbits and explains shell counting well, but it is not correct: in the <b>quantum mechanical model</b> electrons are described by wavefunctions, and orbitals are regions of probability, not paths.</p>`,
+ exNote:'Ground-state exception to simple Aufbau filling (NIST).',predNote:'Predicted: configuration for Z > 103 follows the simple filling order and is not experimentally established.',
+ lrNote:'Lr: placed in group 3 by IUPAC 2021 convention; ground state is [Rn] 5f¹⁴ 7s² 7p¹.',
+ cmpH:'Compare elements (max 4)',cmpEmpty:'Select elements in the periodic table and press “Add to compare”.',
+ srcH:'Data sources and provenance',testH:'Self-tests (run in your browser)',run:'Run tests',roadH:'Roadmap (remaining modules)',
+ src:`<ul class="plain"><li><b>Element names, symbols, layout:</b> IUPAC periodic table (names of Z=113–118 as approved 2016).</li><li><b>Standard atomic weights:</b> IUPAC/CIAAW abridged values; brackets mean no standard weight and show the mass number of a long-lived isotope. <i>Entered by hand, not yet machine-checked against the CIAAW table.</i></li><li><b>Electronegativity:</b> Pauling scale, common compilations (empty where no value is established). Values for the f-block and heaviest actinides vary by source. <i>Hand-entered, needs verification.</i></li><li><b>Electron configurations:</b> generated by the Madelung filling rule plus a list of 20 ground-state exceptions taken from NIST ASD (Z ≤ 103). For Z &gt; 103 configurations are <i>predicted</i>, not measured.</li><li><b>Persian names:</b> common transliterations; spelling varies between references. Review by a Persian chemistry editor is recommended.</li><li><b>Physical state:</b> at 273–298 K, 1 atm; marked unknown where not established.</li></ul>`,
+ road:`<ol class="plain"><li>Done: periodic table, filters, search, compare, 3D Bohr / shell / subshell views.</li><li>Next: Quantum orbital visualizer (hydrogenic wavefunctions, nodes, phase, isosurface slider).</li><li>Then: electron-configuration engine (ions, Hund boxes, spin), energy levels, NIST emission spectra (needs NIST ASD data files), quantum numbers, isotopes, trends, three explanation levels.</li></ol>`},
+fa:{title:'آزمایشگاه اتمی · اتم، اوربیتال و طیف',search:'جستجوی نام، نماد، شماره',
+ nav:{table:'جدول تناوبی',atom:'ساختار اتم',compare:'مقایسه',sources:'منابع و آزمون‌ها'},
+ all:'همه',cats:'دسته (Category)',blocks:'بلوک (Block)',colorBy:'رنگ بر اساس',cb:{category:'دسته',block:'بلوک',chi:'الکترونگاتیوی (پاولینگ)',mass:'جرم اتمی'},
+ z:'عدد اتمی (Atomic number)',sym:'نماد',mass:'جرم اتمی استاندارد',p:'پروتون (Proton)',n:'نوترون (تقریبی)',e:'الکترون (اتم خنثی)',cfg:'آرایش الکترونی (Electron configuration)',nob:'آرایش فشرده گاز نجیب',
+ per:'دوره (Period)',grp:'گروه (Group)',blk:'بلوک (Block)',cat:'دسته',chi:'الکترونگاتیوی (Electronegativity)',state:'حالت در شرایط استاندارد',
+ states:{gas:'گاز',liquid:'مایع',solid:'جامد',unknown:'نامشخص'},
+ shells:'الکترون در هر لایه (Shell)',subs:'الکترون در هر زیرلایه (Subshell)',na:'بارگذاری نشده',
+ pending:'هنوز نمایش داده نمی‌شود (داده تأییدشده‌ای بارگذاری نشده و چیزی حدس زده نمی‌شود): انرژی یونش، شعاع اتمی، الکترون‌خواهی، اعداد اکسایش، نقطه ذوب و جوش، چگالی، تاریخچه کشف، ایزوتوپ‌ها.',
+ addCmp:'افزودن به مقایسه',rmCmp:'حذف از مقایسه',cmpFull:'حداکثر ۴ عنصر قابل مقایسه است.',open3d:'نمایش اتم سه‌بعدی',
+ modes:{bohr:'مدل بور (Bohr)',shell:'لایه‌های الکترونی (Shells)',sub:'زیرلایه‌ها (Subshells)'},
+ play:'توقف',resume:'انیمیشن',reset:'بازنشانی دید',hint:'کشیدن: چرخش · چرخ ماوس / دو انگشت: زوم · کلیک راست یا Shift: جابه‌جایی',
+ notes:{bohr:'مدلی ساده‌شده برای آموزش. الکترون‌های روی دایره فقط تصویر آموزشی‌اند و الکترون واقعی مسیر مشخصی ندارد. مدل اوربیتال کوانتومی در مرحله ۲ می‌آید.',
+  shell:'هر کره یک لایه اصلی (n) را نشان می‌دهد. الکترون‌ها اینجا رسم نشده‌اند چون درون لایه مکان معینی ندارند.',
+  sub:'هر کره یک زیرلایه اشغال‌شده (n, l) است. اندازه‌ها شماتیک‌اند و شعاع یا انرژی واقعی نیستند.'},
+ nucleusNote:'هسته به‌صورت شماتیک و بسیار بزرگ‌تر از مقیاس واقعی رسم شده است. تعداد نوترون N = A − Z با A برابر جرم اتمی گردشده است و همیشه فراوان‌ترین ایزوتوپ نیست؛ ماژول ایزوتوپ بعداً می‌آید.',
+ aboutH:'چه چیزی را می‌بینم؟',
+ about:(e,o)=>`<p>این یک اتم خنثی <b>${e.fa} (${e.en})</b> است: ${e.z} پروتون در هسته و ${e.z} الکترون. الکترون‌ها در ${Object.keys(shells(e.z)).length} لایه اصلی چیده شده‌اند؛ بیشینه ظرفیت لایه n برابر 2n² است.</p><p><b>مدل بور (Bohr model)</b> الکترون‌ها را روی مدارهای دایره‌ای نشان می‌دهد و شمارش لایه‌ها را خوب توضیح می‌دهد، اما درست نیست؛ در <b>مدل مکانیک کوانتومی</b> الکترون با تابع موج (Wavefunction) توصیف می‌شود و اوربیتال (Orbital) ناحیه‌ای از احتمال است، نه مسیر.</p>`,
+ exNote:'استثنا از قاعده ساده آفبا در حالت پایه (NIST).',predNote:'پیش‌بینی‌شده: آرایش عناصر Z > 103 از قاعده ساده پیروی می‌کند و آزمایشگاهی تأیید نشده است.',
+ lrNote:'Lr: طبق قرارداد IUPAC 2021 در گروه ۳ قرار می‌گیرد؛ حالت پایه [Rn] 5f¹⁴ 7s² 7p¹ است.',
+ cmpH:'مقایسه عناصر (حداکثر ۴)',cmpEmpty:'عناصر را در جدول تناوبی انتخاب کنید و «افزودن به مقایسه» را بزنید.',
+ srcH:'منابع و سرچشمه داده‌ها',testH:'آزمون‌های خودکار (در مرورگر شما)',run:'اجرای آزمون‌ها',roadH:'نقشه راه (ماژول‌های باقی‌مانده)',
+ src:`<ul class="plain"><li><b>نام، نماد و چیدمان:</b> جدول تناوبی IUPAC (نام عناصر ۱۱۳ تا ۱۱۸ مطابق تأیید ۲۰۱۶).</li><li><b>جرم اتمی استاندارد:</b> مقادیر خلاصه IUPAC/CIAAW؛ کروشه یعنی جرم استاندارد وجود ندارد و عدد جرمی یک ایزوتوپ پایدارتر آمده است. <i>دستی وارد شده و هنوز با جدول CIAAW تطبیق ماشینی نشده است.</i></li><li><b>الکترونگاتیوی:</b> مقیاس پاولینگ؛ جاهای خالی یعنی مقدار معتبری موجود نیست. <i>دستی وارد شده و نیاز به راستی‌آزمایی دارد.</i></li><li><b>آرایش الکترونی:</b> تولید با قاعده مادلونگ به‌علاوه ۲۰ استثنای حالت پایه از NIST ASD (تا Z=103). برای Z &gt; 103 آرایش <i>پیش‌بینی</i> است.</li><li><b>نام‌های فارسی:</b> نگارش‌های رایج؛ املا در منابع مختلف متفاوت است و بازبینی توسط ویراستار شیمی توصیه می‌شود.</li><li><b>حالت فیزیکی:</b> در ۲۷۳–۲۹۸ کلوین و ۱ atm؛ در صورت نبود داده «نامشخص».</li></ul>`,
+ road:`<ol class="plain"><li>انجام‌شده: جدول تناوبی، فیلتر، جستجو، مقایسه، نمای سه‌بعدی بور / لایه / زیرلایه.</li><li>بعدی: نمایشگر اوربیتال کوانتومی (تابع موج هیدروژن‌گونه، گره‌ها، فاز، آستانه چگالی).</li><li>سپس: موتور آرایش الکترونی (یون‌ها، جعبه‌های هوند، اسپین)، ترازهای انرژی، طیف نشری NIST (نیازمند فایل‌های داده NIST ASD)، اعداد کوانتومی، ایزوتوپ‌ها، روندها و سه سطح توضیح.</li></ol>`}
+};
+const t=()=>I18[S.lang];
+const catName=k=>CAT[k][S.lang];
+const elName=e=>S.lang==='fa'?`${e.fa} (${e.en})`:`${e.en} (${e.fa})`;
+const cfgHtml=z=>cfgText(config(z));
+
+// ---------- static chrome ----------
+function applyChrome(){
+ document.documentElement.lang=S.lang;document.documentElement.dir=S.lang==='fa'?'rtl':'ltr';
+ document.documentElement.dataset.theme=S.theme;
+ $('#title').textContent=t().title;$('#q').placeholder=t().search;
+ $('#btnLang').textContent=S.lang==='fa'?'English':'فارسی';
+ $('#btnTheme').textContent=S.theme==='dark'?'☀':'☾';
+ $('#nav').innerHTML=Object.keys(t().nav).map(k=>`<button data-tab="${k}" aria-pressed="${S.tab===k}">${t().nav[k]}</button>`).join('');
+ $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+ const chip=(grp,val,label)=>`<button data-${grp}="${val}" aria-pressed="${S[grp]===(val||null)}">${label}</button>`;
+ $('#catChips').innerHTML=`<span class="lbl">${t().cats}</span>`+chip('cat','',t().all)+Object.keys(CAT).map(k=>chip('cat',k,catName(k))).join('');
+ $('#blockChips').innerHTML=`<span class="lbl">${t().blocks}</span>`+chip('block','',t().all)+['s','p','d','f'].map(b=>chip('block',b,b)).join('');
+ $('#catChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.cat=b.dataset.cat||null;applyChrome();paintTable()});
+ $('#blockChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.block=b.dataset.block||null;applyChrome();paintTable()});
+ $('#lblColor').textContent=t().colorBy;
+ $('#colorBy').innerHTML=Object.keys(t().cb).map(k=>`<option value="${k}" ${k===S.colorBy?'selected':''}>${t().cb[k]}</option>`).join('');
+ $('#modeBtns').innerHTML=Object.keys(t().modes).map(k=>`<button data-mode="${k}" aria-pressed="${S.mode===k}">${t().modes[k]}</button>`).join('');
+ $('#modeBtns').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;applyChrome();buildAtom()});
+ $('#btnPlay').textContent=S.playing?t().play:t().resume;$('#btnReset').textContent=t().reset;$('#hint').textContent=t().hint;
+ $('#aboutH').textContent=t().aboutH;$('#cmpH').textContent=t().cmpH;$('#srcH').textContent=t().srcH;
+ $('#testH').textContent=t().testH;$('#runTests').textContent=t().run;$('#roadH').textContent=t().roadH;
+ $('#srcBody').innerHTML=t().src;$('#roadBody').innerHTML=t().road;
+}
+
+// ---------- periodic table ----------
+function colorOf(e){
+ if(S.colorBy==='category')return CAT[e.cat].c;
+ if(S.colorBy==='block')return BLOCKC[e.block];
+ if(S.colorBy==='chi'){if(e.chi==null)return'#6b7488';const x=(e.chi-0.7)/(3.98-0.7);return`hsl(${230-210*x} 75% 58%)`}
+ const x=Math.min(1,e.A/294);return`hsl(${200-10*x} 70% ${85-50*x}%)`;
+}
+function buildTable(){
+ const host=$('#ptable');host.innerHTML='';
+ const ph=(r,c,txt)=>{const d=document.createElement('div');d.className='ph';d.style.gridRow=r;d.style.gridColumn=c;d.textContent=txt;host.appendChild(d)};
+ ph(6,3,'57–71');ph(7,3,'89–103');
+ EL.forEach(e=>{
+  const d=document.createElement('div');d.className='cell';d.dataset.z=e.z;d.tabIndex=0;d.setAttribute('role','gridcell');
+  d.style.gridRow=e.pos[0];d.style.gridColumn=e.pos[1];
+  d.innerHTML=`<span class="z">${e.z}</span><span class="s">${e.sym}</span><span class="n"></span>`;
+  d.onclick=()=>select(e.z);d.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(e.z)}};
+  host.appendChild(d);
+ });
+ // spacer row between main table and f-block strips
+ const sp=document.createElement('div');sp.style.gridRow=8;sp.style.gridColumn='1 / 3';sp.style.height='8px';host.appendChild(sp);
+}
+function matches(e){
+ if(S.cat&&e.cat!==S.cat)return false;
+ if(S.block&&e.block!==S.block)return false;
+ const q=S.q.trim().toLowerCase();
+ if(q&&!(e.sym.toLowerCase()===q||e.en.toLowerCase().includes(q)||e.fa.includes(S.q.trim())||String(e.z)===q))return false;
+ return true;
+}
+function paintTable(){
+ document.querySelectorAll('.cell').forEach(c=>{
+  const e=EL[c.dataset.z-1];
+  c.style.background=colorOf(e);
+  c.classList.toggle('dim',!matches(e));
+  c.classList.toggle('sel',e.z===S.sel);
+  c.classList.toggle('cmp',S.cmp.includes(e.z));
+  c.querySelector('.n').textContent=S.lang==='fa'?e.fa:e.en;
+  c.title=`${e.z} ${e.en} / ${e.fa}`;
+ });
+ // color key
+ let key='';
+ if(S.colorBy==='category')key=Object.keys(CAT).map(k=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CAT[k].c}"></i> ${catName(k)}</span>`).join(' ');
+ else if(S.colorBy==='block')key=['s','p','d','f'].map(b=>`<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${BLOCKC[b]}"></i> ${b}</span>`).join(' ');
+ else key=`<span class="note">${S.colorBy==='chi'?'0.7 → 3.98 (grey = no value)':'1 → 294'}</span>`;
+ $('#colorKey').innerHTML=key;
+}
+
+// ---------- detail ----------
+function massText(e){return e.radioactiveNoStd?`${e.mass} (mass number)`:`${e.mass}`}
+function paintDetail(){
+ const e=EL[S.sel-1],T=t(),o=config(e.z),sh=shells(e.z);
+ const N=e.A-e.z;
+ $('#detail').innerHTML=`
+  <div class="head"><div class="big" style="background:${CAT[e.cat].c}"><small>${e.z}</small><b>${e.sym}</b></div>
+  <div><div style="font-size:19px;font-weight:700">${elName(e)}</div><div class="note" style="margin:0">${catName(e.cat)}</div></div></div>
+  <dl class="kv">
+   <dt>${T.z}</dt><dd>${e.z}</dd>
+   <dt>${T.mass}</dt><dd>${massText(e)}</dd>
+   <dt>${T.p}</dt><dd>${e.z}</dd>
+   <dt>${T.n}</dt><dd>≈ ${N}</dd>
+   <dt>${T.e}</dt><dd>${e.z}</dd>
+   <dt>${T.per}</dt><dd>${e.period}</dd>
+   <dt>${T.grp}</dt><dd>${e.group??'—'}</dd>
+   <dt>${T.blk}</dt><dd>${e.block}</dd>
+   <dt>${T.chi}</dt><dd>${e.chi??'—'}</dd>
+   <dt>${T.state}</dt><dd>${T.states[e.state]}</dd>
+  </dl>
+  <div class="row"><button id="bCmp">${S.cmp.includes(e.z)?T.rmCmp:T.addCmp}</button><button id="b3d">${T.open3d}</button></div>
+  <div id="cmpMsg" class="note"></div>`;
+ $('#bCmp').onclick=()=>toggleCmp(e.z);
+ $('#b3d').onclick=()=>showTab('atom');
+ const max=Math.max(...Object.values(sh));
+ const order=sortKeys(o);
+ $('#detail2').innerHTML=`
+  <h2>${T.cfg}</h2><div class="cfg">${cfgText(o)}</div>
+  <h2 style="margin-top:12px">${T.nob}</h2><div class="cfg">${shorthand(e.z)}</div>
+  ${e.exception?`<div class="warn">${T.exNote}</div>`:''}
+  ${e.predicted?`<div class="warn">${T.predNote}</div>`:''}
+  ${e.z===103?`<div class="warn">${T.lrNote}</div>`:''}
+  <h2 style="margin-top:12px">${T.shells}</h2>
+  ${Object.keys(sh).map(n=>`<div class="bar"><span style="width:70px">n=${n}</span><i style="width:${sh[n]/max*55}%"></i><span>${sh[n]} <span class="note">/ ${2*n*n}</span></span></div>`).join('')}
+  <h2 style="margin-top:12px">${T.subs}</h2>
+  <div class="cfg">${order.map(k=>`${k}: ${o[k]}/${2*(2*LET.indexOf(k[1])+1)}`).join(' · ')}</div>
+  <p class="note">${T.pending}</p>`;
+}
+function toggleCmp(z){
+ const i=S.cmp.indexOf(z);
+ if(i>=0)S.cmp.splice(i,1);
+ else if(S.cmp.length>=4){$('#cmpMsg').textContent=t().cmpFull;return}
+ else S.cmp.push(z);
+ paintTable();paintDetail();paintCompare();
+}
+function paintCompare(){
+ const T=t();
+ if(!S.cmp.length){$('#cmpBody').innerHTML=`<p class="note">${T.cmpEmpty}</p>`;return}
+ const E=S.cmp.map(z=>EL[z-1]);
+ const rows=[
+  [T.z,e=>e.z],[T.mass,massText],[T.p,e=>e.z],[T.e,e=>e.z],[T.n,e=>'≈ '+(e.A-e.z)],
+  [T.per,e=>e.period],[T.grp,e=>e.group??'—'],[T.blk,e=>e.block],[T.cat,e=>catName(e.cat)],
+  [T.chi,e=>e.chi??'—'],[T.state,e=>T.states[e.state]],
+  [T.nob,e=>`<span class="cfg">${shorthand(e.z)}</span>`],
+  [T.shells,e=>{const s=shells(e.z);return Object.keys(s).map(n=>s[n]).join(', ')}],
+  [T.subs,e=>`<span class="cfg">${sortKeys(config(e.z)).map(k=>k+':'+config(e.z)[k]).join(' ')}</span>`]
+ ];
+ $('#cmpBody').innerHTML=`<table class="cmp"><tr><th></th>${E.map(e=>`<th style="color:${CAT[e.cat].c};font-size:16px">${e.sym} <span style="color:var(--muted);font-size:12px">${S.lang==='fa'?e.fa:e.en}</span> <button data-rm="${e.z}" style="padding:0 6px">×</button></th>`).join('')}</tr>
+ ${rows.map(r=>`<tr><th>${r[0]}</th>${E.map(e=>`<td>${r[1](e)}</td>`).join('')}</tr>`).join('')}</table>`;
+ $('#cmpBody').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>toggleCmp(+b.dataset.rm));
+}
+
+function select(z){
+ S.sel=Math.max(1,Math.min(118,z));
+ paintTable();paintDetail();paintAtomHeader();
+ if(S.tab==='atom')buildAtom();
+}
+function showTab(k){
+ S.tab=k;
+ document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('show',s.id==='tab-'+k));
+ document.querySelectorAll('#nav button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===k));
+ if(k==='atom'){initGL();resizeGL();buildAtom();paintAtomHeader()}
+ if(k==='compare')paintCompare();
+}
+
+// ---------- 3D ----------
+let R,scene,cam,atomG,tnow=0,glReady=false,cs={th:.6,ph:1.25,rad:12,tx:new THREE.Vector3()};
+let electrons=[],nucleus=null,defaultRad=12;
+function rn(n){return 1.5+0.95*(n-1)}
+function rng(seed){let s=seed>>>0||1;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function updateCam(){
+ const sp=Math.sin(cs.ph);
+ cam.position.set(cs.tx.x+cs.rad*sp*Math.sin(cs.th),cs.tx.y+cs.rad*Math.cos(cs.ph),cs.tx.z+cs.rad*sp*Math.cos(cs.th));
+ cam.lookAt(cs.tx);cam.updateMatrixWorld();
+}
+function resizeGL(){
+ if(!glReady)return;const h=$('#gl');const w=h.clientWidth,H=h.clientHeight;
+ if(!w||!H)return;R.setSize(w,H,false);cam.aspect=w/H;cam.updateProjectionMatrix();
+}
+function initGL(){
+ if(glReady)return;glReady=true;
+ const host=$('#gl');
+ R=new THREE.WebGLRenderer({antialias:true,alpha:true});R.setPixelRatio(Math.min(devicePixelRatio,2));host.appendChild(R.domElement);
+ scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(45,1,.1,500);
+ scene.add(new THREE.AmbientLight(0xffffff,.7));
+ const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(5,8,6);scene.add(dl);
+ atomG=new THREE.Group();scene.add(atomG);
+ updateCam();
+ const ptr=new Map();let last=null;
+ const cv=R.domElement;
+ cv.addEventListener('contextmenu',e=>e.preventDefault());
+ cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey})});
+ cv.addEventListener('pointerup',e=>{ptr.delete(e.pointerId);last=null});
+ cv.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);last=null});
+ const pan=(dx,dy)=>{
+  const r=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0),u=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1),k=cs.rad*.0016;
+  cs.tx.addScaledVector(r,-dx*k).addScaledVector(u,dy*k);
+ };
+ cv.addEventListener('pointermove',e=>{
+  const p=ptr.get(e.pointerId);if(!p)return;
+  if(ptr.size===1){
+   const dx=e.clientX-p.x,dy=e.clientY-p.y;
+   if(p.b===2||p.sh)pan(dx,dy);else{cs.th-=dx*.008;cs.ph=Math.max(.05,Math.min(Math.PI-.05,cs.ph-dy*.008))}
+   p.x=e.clientX;p.y=e.clientY;
+  }else if(ptr.size===2){
+   const ids=[...ptr.keys()],a=ptr.get(ids[0]),b=ptr.get(ids[1]);
+   const d0=Math.hypot(a.x-b.x,a.y-b.y),m0={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+   p.x=e.clientX;p.y=e.clientY;
+   const d1=Math.hypot(a.x-b.x,a.y-b.y),m1={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+   if(d0>0)cs.rad=Math.max(2,Math.min(120,cs.rad*d0/d1));
+   pan(m1.x-m0.x,m1.y-m0.y);
+  }
+  updateCam();
+ });
+ cv.addEventListener('wheel',e=>{e.preventDefault();cs.rad=Math.max(2,Math.min(120,cs.rad*Math.exp(e.deltaY*.0012)));updateCam()},{passive:false});
+ new ResizeObserver(resizeGL).observe(host);
+ const clock=new THREE.Clock();
+ (function loop(){
+  requestAnimationFrame(loop);
+  if(S.tab!=='atom')return;
+  const dt=clock.getDelta();
+  if(S.playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   tnow+=dt;
+   electrons.forEach(o=>{const a=o.ph+tnow*.9/Math.pow(o.n,.8);o.m.position.set(o.r*Math.cos(a),o.r*Math.sin(a),0)});
+   if(nucleus)nucleus.rotation.y+=dt*.25;
+  }
+  R.render(scene,cam);
+ })();
+ $('#btnPlay').onclick=()=>{S.playing=!S.playing;$('#btnPlay').textContent=S.playing?t().play:t().resume};
+ $('#btnReset').onclick=resetView;
+}
+function resetView(){cs.th=.6;cs.ph=1.25;cs.rad=defaultRad;cs.tx.set(0,0,0);updateCam()}
+function clearAtom(){
+ while(atomG.children.length){const c=atomG.children.pop();c.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
+ electrons=[];nucleus=null;
+}
+const SPH=new THREE.SphereGeometry(1,10,8);
+function buildNucleus(z){
+ const e=EL[z-1],A=Math.max(e.A,z),N=A-z;
+ const a=.085,Rn=1.3*a*Math.cbrt(A);
+ const g=new THREE.Group(),rand=rng(z*7919+13),pts=[];
+ const mp=new THREE.MeshStandardMaterial({color:0xe5484d,roughness:.5}),mn=new THREE.MeshStandardMaterial({color:0x9aa4b2,roughness:.5});
+ const kinds=[];for(let i=0;i<A;i++)kinds.push(i<z);
+ for(let i=kinds.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[kinds[i],kinds[j]]=[kinds[j],kinds[i]]}
+ for(let i=0;i<A;i++){
+  let best=null,bd=-1;
+  for(let k=0;k<24;k++){
+   let x,y,zz;do{x=rand()*2-1;y=rand()*2-1;zz=rand()*2-1}while(x*x+y*y+zz*zz>1);
+   const p=new THREE.Vector3(x,y,zz).multiplyScalar(Rn-a*.6);
+   let d=1e9;for(const q of pts)d=Math.min(d,p.distanceToSquared(q));
+   if(d>bd){bd=d;best=p;if(d>(1.9*a)**2)break}
+  }
+  pts.push(best);
+  const m=new THREE.Mesh(SPH,kinds[i]?mp:mn);m.scale.setScalar(a);m.position.copy(best);g.add(m);
+ }
+ nucleus=g;atomG.add(g);return Rn;
+}
+function ring(r){
+ const p=[];for(let i=0;i<=128;i++){const a=i/128*Math.PI*2;p.push(new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),0))}
+ return new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:0x8aa0c0,transparent:true,opacity:.55}));
+}
+const LCOL={s:0x4da3ff,p:0xff6b6b,d:0xffd24d,f:0x5fe08a};
+function buildAtom(){
+ if(!glReady)return;clearAtom();
+ const z=S.sel,o=config(z),sh=shells(z),nmax=Math.max(...Object.keys(sh).map(Number)),T=t();
+ buildNucleus(z);
+ let legend='';
+ const rand=rng(z*31+5);
+ if(S.mode==='bohr'){
+  const eg=new THREE.SphereGeometry(1,14,10),em=new THREE.MeshStandardMaterial({color:0x5cc8ff,emissive:0x0a4a66,roughness:.3});
+  for(let n=1;n<=nmax;n++){
+   const g=new THREE.Group();g.rotation.set((rand()-.5)*1.6,(rand()-.5)*1.6,(rand()-.5)*1.6);
+   const r=rn(n);g.add(ring(r));
+   for(let k=0;k<sh[n];k++){const m=new THREE.Mesh(eg,em);m.scale.setScalar(.12);g.add(m);electrons.push({m,r,n,ph:k/sh[n]*Math.PI*2})}
+   atomG.add(g);
+   legend+=`<div><i style="background:#5cc8ff"></i>n=${n}: ${sh[n]} e⁻ (max ${2*n*n})</div>`;
+  }
+ }else if(S.mode==='shell'){
+  for(let n=1;n<=nmax;n++){
+   const col=new THREE.Color().setHSL((n-1)/8*.8+.55,.7,.6);
+   const geo=new THREE.SphereGeometry(rn(n),48,32);
+   atomG.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.1,depthWrite:false,side:THREE.DoubleSide})));
+   atomG.add(new THREE.Mesh(new THREE.SphereGeometry(rn(n),24,16),new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:.22})));
+   legend+=`<div><i style="background:#${col.getHexString()}"></i>n=${n}: ${sh[n]} e⁻ / ${2*n*n}</div>`;
+  }
+ }else{
+  for(const k of sortKeys(o)){
+   const n=+k[0],l=LET.indexOf(k[1]),r=rn(n)-.33+.22*l,c=LCOL[k[1]];
+   atomG.add(new THREE.Mesh(new THREE.SphereGeometry(r,40,28),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide})));
+   atomG.add(new THREE.Mesh(new THREE.SphereGeometry(r,20,14),new THREE.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:.2})));
+   legend+=`<div><i style="background:#${c.toString(16)}"></i>${k}: ${o[k]} e⁻ / ${2*(2*l+1)}</div>`;
+  }
+ }
+ $('#legend').innerHTML=legend;
+ $('#modeNote').innerHTML=`${T.notes[S.mode]}<br><span class="note">${T.nucleusNote}</span>`;
+ $('#about').innerHTML=T.about(EL[z-1],o);
+ defaultRad=rn(nmax)*2.7+2;resetView();resizeGL();
+}
+function paintAtomHeader(){
+ const e=EL[S.sel-1];
+ $('#elNum').value=e.z;$('#atomName').textContent=`${e.sym} · ${elName(e)} · ${shorthand(e.z)}`;
+}
+
+// ---------- tests ----------
+function runTests(){
+ const r=selfTests();
+ $('#testOut').innerHTML=r.map(x=>`<div class="${x.ok?'pass':'fail'}">${x.ok?'✔':'✘'} ${x.n}${x.ok?'':' — '+x.d}</div>`).join('')+
+  `<p class="note">${r.filter(x=>x.ok).length}/${r.length}</p>`;
+}
+
+// ---------- wire up ----------
+$('#q').addEventListener('input',e=>{S.q=e.target.value;paintTable()});
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){const m=EL.find(matches);if(m&&S.q.trim())select(m.z)}});
+$('#btnLang').onclick=()=>{S.lang=S.lang==='en'?'fa':'en';applyChrome();paintTable();paintDetail();paintCompare();paintAtomHeader();if(glReady&&S.tab==='atom')buildAtom()};
+$('#btnTheme').onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';applyChrome()};
+$('#colorBy').onchange=e=>{S.colorBy=e.target.value;paintTable()};
+$('#prevEl').onclick=()=>select(S.sel-1);$('#nextEl').onclick=()=>select(S.sel+1);
+$('#elNum').onchange=e=>select(+e.target.value||1);
+$('#runTests').onclick=runTests;
+
+applyChrome();buildTable();paintTable();paintDetail();paintCompare();showTab('table');
+</script>
+<script id="ui2">
+// ============ UI 2: new modules, integrated into the existing app ============
+(function(){
+const Lg=(en,fa)=>S.lang==='fa'?fa:en;
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const SUPD='⁰¹²³⁴⁵⁶⁷⁸⁹';
+const LCOL2={0:0x4da3ff,1:0xff6b6b,2:0xffd24d,3:0x5fe08a};
+const hex=c=>'#'+c.toString(16).padStart(6,'0');
+const _re0=radialExtent,_rm={};radialExtent=(n,l,pc)=>{const k=n+','+l+','+pc;return _rm[k]??(_rm[k]=_re0(n,l,pc))};
+const _cf0=cloudFor,_cm={};cloudFor=(z,a,b)=>_cm[z]||(_cm[z]=_cf0(z,a,b));
+const LNAME=['s (sharp)','p (principal)','d (diffuse)','f (fundamental)'];
+
+// ---------- navigation ----------
+const NAV={
+ en:{table:'Periodic Table',atom:'Atomic Structure',cutaway:'Atomic Cutaway',econfig:'Electron Configuration',orbital:'3D Orbital Laboratory',elorbital:'Element-Specific Orbitals',levels:'Energy Level Diagram',spectrum:'Emission Spectrum Laboratory',speccmp:'Spectrum Comparison',compare:'Compare',sources:'Sources & Tests'},
+ fa:{table:'جدول تناوبی',atom:'ساختار اتم',cutaway:'برش اتمی (Cutaway)',econfig:'آرایش الکترونی (Electron Configuration)',orbital:'آزمایشگاه اوربیتال (Orbital Lab)',elorbital:'اوربیتال‌های عنصر (Element Orbitals)',levels:'نمودار ترازهای انرژی (Energy Levels)',spectrum:'آزمایشگاه طیف نشری (Emission Spectrum)',speccmp:'مقایسه طیف‌ها (Spectrum Comparison)',compare:'مقایسه',sources:'منابع و آزمون‌ها'}
+};
+I18.en.nav=NAV.en;I18.fa.nav=NAV.fa;
+
+// ---------- tab shells ----------
+function mkTab(id,html){const s=document.createElement('section');s.className='tab';s.id='tab-'+id;s.innerHTML=html;$('main').appendChild(s);return s}
+mkTab('cutaway',`<div class="elbar" data-elbar></div><div class="row" id="cw-views"></div>
+ <div class="glbox" id="cw-gl"><div class="gllegend" id="cw-busy" style="display:none"></div></div>
+ <div class="grid2"><div class="card" id="cw-ctl"></div><div class="card" id="cw-layers"></div></div><div class="warn" id="cw-note"></div>`);
+mkTab('econfig',`<div class="elbar" data-elbar></div><div class="grid2"><div class="card" id="ec-a"></div><div class="card" id="ec-b"></div></div>`);
+mkTab('orbital',`<div class="card" id="og-ctl"></div><div class="glbox" id="og-gl"><div class="gllegend" id="og-busy" style="display:none"></div></div>
+ <div class="grid2"><div class="card" id="og-info"></div><div class="card" id="og-expl"></div></div>`);
+mkTab('elorbital',`<div class="elbar" data-elbar></div><div class="grid2"><div class="card" id="eo-boxes"></div><div><div class="card" id="eo-ctl"></div></div></div>
+ <div class="glbox" id="eo-gl" style="margin-top:12px"><div class="gllegend" id="eo-busy" style="display:none"></div></div><div class="card" id="eo-info" style="margin-top:12px"></div>`);
+mkTab('levels',`<div class="elbar" data-elbar></div><div class="card" id="lv-ctl"></div>
+ <div class="grid2"><div class="card"><canvas id="lv-cv" class="plot" style="height:380px"></canvas></div><div class="card" id="lv-res"></div></div>
+ <div class="card" style="margin-top:12px"><h2 id="lv-animH"></h2><canvas id="lv-anim" class="plot" style="height:210px"></canvas><div class="row"><button id="lv-play"></button><span class="note" id="lv-animNote"></span></div></div>
+ <div class="card" style="margin-top:12px"><h2 id="lv-specH"></h2><canvas id="lv-spec" class="plot" style="height:200px"></canvas></div>`);
+mkTab('spectrum',`<div class="elbar" data-elbar></div><div class="card" id="sp-ctl"></div>
+ <div class="card"><canvas id="sp-cv" class="plot" style="height:300px"></canvas><div class="note" id="sp-note"></div></div>
+ <div class="grid2"><div class="card" id="sp-line"></div><div class="card" id="sp-eq"></div></div>
+ <div class="card" id="sp-hyd" style="margin-top:12px"></div><div class="card" id="sp-imp" style="margin-top:12px"></div>
+ <div class="grid2" style="margin-top:12px"><div class="card" id="sp-src"></div><div class="card" id="sp-spdf"></div></div>`);
+mkTab('speccmp',`<div class="card" id="sc-ctl"></div><div class="card"><canvas id="sc-cv" class="plot" style="height:320px"></canvas><div class="note" id="sc-note"></div></div>
+ <div class="grid2"><div class="card" id="sc-line"></div><div class="card" id="sc-list"></div></div>`);
+
+// ---------- element bar + links ----------
+const LINKS=[['atom','Atomic Structure','ساختار اتم'],['cutaway','Cutaway','برش'],['econfig','Configuration','آرایش'],['elorbital','Orbitals','اوربیتال‌ها'],['levels','Energy levels','ترازها'],['spectrum','Spectrum','طیف']];
+function linksHTML(){return LINKS.map(l=>`<button data-go="${l[0]}" style="padding:3px 9px;font-size:13px">${Lg(l[1],l[2])}</button>`).join('')}
+function elbarHTML(){const e=EL[S.sel-1];
+ return `<button data-prev>◀</button><input type="number" min="1" max="118" value="${e.z}" data-num style="width:70px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px"><button data-next>▶</button>
+ <strong style="font-size:16px">${e.sym} · ${elName(e)}</strong><span class="cfg note" style="margin:0">${shorthand(e.z)}</span><span class="spacer"></span>${linksHTML()}`}
+function wireBar(root){
+ $$('[data-go]',root).forEach(b=>b.onclick=()=>showTab(b.dataset.go));
+ $$('[data-prev]',root).forEach(b=>b.onclick=()=>select(S.sel-1));$$('[data-next]',root).forEach(b=>b.onclick=()=>select(S.sel+1));
+ $$('[data-num]',root).forEach(b=>b.onchange=()=>select(+b.value||1));
+}
+function paintBars(){$$('[data-elbar]').forEach(b=>{b.innerHTML=elbarHTML();wireBar(b)})}
+
+// ---------- generic 3D viewer ----------
+class Viewer3D{
+ constructor(host,clip){
+  this.host=host;this.R=new THREE.WebGLRenderer({antialias:true,alpha:true});this.R.setPixelRatio(Math.min(devicePixelRatio,2));this.R.localClippingEnabled=!!clip;
+  host.appendChild(this.R.domElement);this.R.domElement.style.touchAction='none';
+  this.scene=new THREE.Scene();this.cam=new THREE.PerspectiveCamera(45,1,.01,4000);
+  this.scene.add(new THREE.AmbientLight(0xffffff,.72));const d=new THREE.DirectionalLight(0xffffff,.85);d.position.set(4,7,5);this.scene.add(d);
+  const d2=new THREE.DirectionalLight(0xffffff,.35);d2.position.set(-5,-3,-4);this.scene.add(d2);
+  this.cs={th:.7,ph:1.15,rad:12,t:new THREE.Vector3()};this.defRad=12;this.onFrame=null;this.clock=new THREE.Clock();
+  this.bind();this.upd();new ResizeObserver(()=>this.resize()).observe(host);
+  const loop=()=>{requestAnimationFrame(loop);if(host.offsetParent===null||!host.clientWidth){this.clock.getDelta();return}
+   const dt=Math.min(.1,this.clock.getDelta());if(this.onFrame)this.onFrame(dt);this.R.render(this.scene,this.cam)};loop();
+ }
+ resize(){const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;this.R.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix()}
+ upd(){const c=this.cs,sp=Math.sin(c.ph);this.cam.position.set(c.t.x+c.rad*sp*Math.sin(c.th),c.t.y+c.rad*Math.cos(c.ph),c.t.z+c.rad*sp*Math.cos(c.th));this.cam.lookAt(c.t);this.cam.updateMatrixWorld()}
+ reset(){const c=this.cs;c.th=.7;c.ph=1.15;c.rad=this.defRad;c.t.set(0,0,0);this.upd()}
+ bind(){
+  const cv=this.R.domElement,ptr=new Map(),c=this.cs;
+  const pan=(dx,dy)=>{const r=new THREE.Vector3().setFromMatrixColumn(this.cam.matrix,0),u=new THREE.Vector3().setFromMatrixColumn(this.cam.matrix,1),k=c.rad*.0016;c.t.addScaledVector(r,-dx*k).addScaledVector(u,dy*k)};
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey})});
+  const up=e=>ptr.delete(e.pointerId);cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p)return;
+   if(ptr.size===1){const dx=e.clientX-p.x,dy=e.clientY-p.y;if(p.b===2||p.sh)pan(dx,dy);else{c.th-=dx*.008;c.ph=Math.max(.05,Math.min(Math.PI-.05,c.ph-dy*.008))}p.x=e.clientX;p.y=e.clientY}
+   else if(ptr.size===2){const ids=[...ptr.keys()],a=ptr.get(ids[0]),b=ptr.get(ids[1]);const d0=Math.hypot(a.x-b.x,a.y-b.y),m0={x:(a.x+b.x)/2,y:(a.y+b.y)/2};p.x=e.clientX;p.y=e.clientY;
+    const d1=Math.hypot(a.x-b.x,a.y-b.y),m1={x:(a.x+b.x)/2,y:(a.y+b.y)/2};if(d0>0&&d1>0)c.rad=Math.max(.3,Math.min(2000,c.rad*d0/d1));pan(m1.x-m0.x,m1.y-m0.y)}
+   this.upd()});
+  cv.addEventListener('wheel',e=>{e.preventDefault();c.rad=Math.max(.3,Math.min(2000,c.rad*Math.exp(e.deltaY*.0012)));this.upd()},{passive:false});
+ }
+}
+function disposeTree(o){o.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material){(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}})}
+function clearGroup(g){while(g.children.length){const c=g.children[g.children.length-1];g.remove(c);disposeTree(c)}}
+function textSprite(txt,color,h,wRatio=1){const c=document.createElement('canvas');c.width=128*wRatio;c.height=128;const x=c.getContext('2d');x.font='bold 70px sans-serif';x.fillStyle=color;x.textAlign='center';x.textBaseline='middle';x.fillText(txt,c.width/2,66);
+ const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(h*wRatio,h,1);return s}
+function makeAxes(len){const g=new THREE.Group();[['x',[1,0,0],0xff5555],['y',[0,1,0],0x55dd66],['z',[0,0,1],0x5599ff]].forEach(([k,d,col])=>{
+ const v=new THREE.Vector3(...d).multiplyScalar(len);g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([v.clone().multiplyScalar(-1),v]),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.7})));
+ const s=textSprite(k,hex(col),len*.14);s.position.copy(v).multiplyScalar(1.08);g.add(s)});return g}
+
+// ---------- orbital geometry builders ----------
+const fieldCache=new Map();
+function getField(n,l,k,N){const key=[n,l,k,N].join();if(!fieldCache.has(key)){const R=radialExtent(n,l);fieldCache.set(key,{f:fieldGrid(n,l,k,N,R),R,fn:null});if(fieldCache.size>16)fieldCache.delete(fieldCache.keys().next().value)}return fieldCache.get(key)}
+const angCache=new Map();
+function angNodes(l,k){const key=l+','+k;if(!angCache.has(key))angCache.set(key,angularNodeSurface(l,k));return angCache.get(key)}
+function geoFrom(pos,nm){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));if(nm)g.setAttribute('normal',new THREE.BufferAttribute(nm,3));else g.computeVertexNormals();return g}
+function sliceCanvas(n,l,k,R,axis,pos){
+ const M=160,c=document.createElement('canvas');c.width=c.height=M;const x=c.getContext('2d'),im=x.createImageData(M,M),vals=new Float32Array(M*M);let mx=0;
+ for(let j=0;j<M;j++)for(let i=0;i<M;i++){const u=-R+2*R*(i+.5)/M,v=R-2*R*(j+.5)/M;let p;
+  if(axis==='z')p=psi(n,l,k,u,v,pos);else if(axis==='y')p=psi(n,l,k,u,pos,-v);else p=psi(n,l,k,pos,v,-u);vals[j*M+i]=p;mx=Math.max(mx,p*p)}
+ for(let q=0;q<M*M;q++){const p=vals[q],a=Math.pow(p*p/(mx||1),.4);const col=p>=0?[59,130,246]:[239,68,68];im.data[4*q]=col[0];im.data[4*q+1]=col[1];im.data[4*q+2]=col[2];im.data[4*q+3]=Math.round(255*a)}
+ x.putImageData(im,0,0);return c}
+const PHASE={pos:0x3b82f6,neg:0xef4444};
+function orbitalGroup(spec,o){
+ const{n,l,k}=spec,g=new THREE.Group(),N=o.N||52,F=getField(n,l,k,N),R=F.R,f=F.f;
+ if(!F.fn){F.fn=new Float32Array(f.length);for(let i=0;i<f.length;i++)F.fn[i]=-f[i]}
+ const c=probThreshold(f,o.p),size=o.D;const sc=size/(o.Rview||R);
+ const addIso=(sgn,col,opacity)=>{const arr=sgn>0?f:F.fn,pos=isoSurface(f,N,R,c,sgn);if(!pos.length)return;
+  const nm=isoNormals(pos,f,N,R,sgn);
+  g.add(new THREE.Mesh(geoFrom(pos,nm),new THREE.MeshPhongMaterial({color:col,transparent:opacity<.95,opacity,side:THREE.DoubleSide,shininess:50,depthWrite:opacity>=.95,specular:0x333333})))};
+ const mode=o.mode,op=o.opacity;
+ if(mode==='phase'){addIso(1,PHASE.pos,op??.96);addIso(-1,PHASE.neg,op??.96)}
+ else if(mode==='iso'){addIso(1,PHASE.pos,op??.42);addIso(-1,PHASE.neg,op??.42)}
+ else if(mode==='nodal'){addIso(1,PHASE.pos,.1);addIso(-1,PHASE.neg,.1)}
+ else if(mode==='slice'){addIso(1,PHASE.pos,.08);addIso(-1,PHASE.neg,.08);
+  const tex=new THREE.CanvasTexture(sliceCanvas(n,l,k,R,o.sAxis,o.sPos*R)),m=new THREE.Mesh(new THREE.PlaneGeometry(2*R,2*R),new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthWrite:false}));
+  if(o.sAxis==='y')m.rotation.x=-Math.PI/2;else if(o.sAxis==='x')m.rotation.y=Math.PI/2;
+  m.position[o.sAxis]=o.sPos*R;g.add(m);
+  const fr=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0x8899aa}));fr.rotation.copy(m.rotation);fr.position.copy(m.position);g.add(fr)}
+ else if(mode==='density'){
+  const len=f.length,cum=new Float64Array(len);let t=0;for(let i=0;i<len;i++){t+=f[i]*f[i];cum[i]=t}
+  const M=18000,P=new Float32Array(M*3),C=new Float32Array(M*3),rnd=mkRng(n*131+l*17+k*7+1),h=2*R/(N-1),N2=N*N,cp=new THREE.Color(PHASE.pos),cn=new THREE.Color(PHASE.neg);
+  for(let m=0;m<M;m++){const u=rnd()*t;let lo=0,hi=len-1;while(lo<hi){const mid=(lo+hi)>>1;if(cum[mid]<u)lo=mid+1;else hi=mid}
+   const a=Math.floor(lo/N2),b=Math.floor((lo%N2)/N),cc=lo%N;P[3*m]=-R+(cc+rnd()-.5)*h;P[3*m+1]=-R+(b+rnd()-.5)*h;P[3*m+2]=-R+(a+rnd()-.5)*h;
+   const col=f[lo]>=0?cp:cn;C[3*m]=col.r;C[3*m+1]=col.g;C[3*m+2]=col.b}
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(P,3));pg.setAttribute('color',new THREE.BufferAttribute(C,3));
+  g.add(new THREE.Points(pg,new THREE.PointsMaterial({size:size*.016,vertexColors:true,transparent:true,opacity:.6,depthWrite:false,sizeAttenuation:true})))}
+ const rn=radialNodes(n,l);
+ if(o.radNodes||mode==='nodal')rn.forEach(r=>g.add(new THREE.Mesh(new THREE.SphereGeometry(r,36,24),new THREE.MeshBasicMaterial({color:0xf5c542,wireframe:true,transparent:true,opacity:.35}))));
+ if((o.angNodes||mode==='nodal')&&l>0){const pos=angNodes(l,k).slice();for(let i=0;i<pos.length;i++)pos[i]*=R*.92;
+  g.add(new THREE.Mesh(geoFrom(pos),new THREE.MeshBasicMaterial({color:0xdddddd,transparent:true,opacity:.35,side:THREE.DoubleSide,wireframe:false,depthWrite:false})))}
+ g.scale.setScalar(sc);g.userData={R,rn,thr:c};return g;
+}
+class OrbScene{
+ constructor(host){this.v=new Viewer3D(host);this.root=new THREE.Group();this.v.scene.add(this.root)}
+ show(list,o){
+  clearGroup(this.root);const D=4;const Rs=list.map(s=>radialExtent(s.n,s.l));const Rview=o.common?Math.max(...Rs):null;const multi=list.length>1&&!o.overlay;
+  const info=[];
+  list.forEach((s,i)=>{const w=new THREE.Group();if(multi)w.position.x=(i?1:-1)*D*1.3;
+   const og=orbitalGroup(s,{...o,D,Rview,opacity:s.opacity});w.add(og);info.push(og.userData);
+   if(o.axes)w.add(makeAxes(D*1.15));
+   if(o.nuc){const nu=new THREE.Mesh(new THREE.SphereGeometry(D*.022,16,12),new THREE.MeshBasicMaterial({color:0xffd24d}));w.add(nu)}
+   this.root.add(w)});
+  this.v.defRad=multi?D*6.2:D*3.5;if(!this._set){this.v.reset();this._set=true}return info;
+ }
+}
+
+// ============ ATOMIC CUTAWAY ============
+const C={view:'complete',axis:'z',off:0,gap:5,hinge:0,scale:'sqrt',lay:{sh:1,sub:0,cloud:1},cutOn:false,hideFront:false,splitTarget:0,splitT:0,hideSh:new Set(),hideSub:new Set(),hi:null,halves:null,z:0};
+const VIEWS={complete:{sh:1,sub:0,cloud:1,cut:0,front:0,split:0},cutaway:{sh:1,sub:0,cloud:1,cut:1,front:1,split:0},split:{sh:1,sub:0,cloud:1,cut:1,front:0,split:1},shell:{sh:1,sub:0,cloud:0,cut:0,front:0,split:0},sub:{sh:0,sub:1,cloud:0,cut:0,front:0,split:0},orbital:{sh:0,sub:0,cloud:1,cut:0,front:0,split:0}};
+const VNAME={complete:['Complete atomic view','نمای کامل اتم'],cutaway:['Cutaway view','نمای برش‌خورده'],split:['Half-separated view','نمای دو نیمه جدا'],shell:['Shell-only view','فقط لایه‌ها (Shells)'],sub:['Subshell-only view','فقط زیرلایه‌ها (Subshells)'],orbital:['Orbital probability view','نمای چگالی احتمال (Probability)']};
+let cwV=null,cwRoot=null;
+function cwInit(){if(cwV)return;cwV=new Viewer3D($('#cw-gl'),true);cwRoot=new THREE.Group();cwV.scene.add(cwRoot);cwV.defRad=15;cwV.reset();cwV.onFrame=cwFrame}
+function axisVec(){return C.axis==='x'?new THREE.Vector3(1,0,0):C.axis==='y'?new THREE.Vector3(0,1,0):new THREE.Vector3(0,0,1)}
+function makeNucleus(z,maxR,clip){
+ const e=EL[z-1],A=Math.max(e.A,z),a=.085,Rn=1.3*a*Math.cbrt(A),g=new THREE.Group(),rand=mkRng(z*7919+13),pts=[];
+ const mp=new THREE.MeshStandardMaterial({color:0xe5484d,roughness:.5}),mn=new THREE.MeshStandardMaterial({color:0x9aa4b2,roughness:.5}),sph=new THREE.SphereGeometry(1,10,8);if(clip){mp.clippingPlanes=[clip];mn.clippingPlanes=[clip];mp.side=mn.side=THREE.DoubleSide}
+ const kinds=[];for(let i=0;i<A;i++)kinds.push(i<z);for(let i=A-1;i>0;i--){const j=Math.floor(rand()*(i+1));[kinds[i],kinds[j]]=[kinds[j],kinds[i]]}
+ for(let i=0;i<A;i++){let best=null,bd=-1;for(let t=0;t<20;t++){let x,y,q;do{x=rand()*2-1;y=rand()*2-1;q=rand()*2-1}while(x*x+y*y+q*q>1);const p=new THREE.Vector3(x,y,q).multiplyScalar(Rn-a*.6);let d=1e9;for(const w of pts)d=Math.min(d,p.distanceToSquared(w));if(d>bd){bd=d;best=p;if(d>(1.9*a)**2)break}}
+  pts.push(best);const m=new THREE.Mesh(sph,kinds[i]?mp:mn);m.scale.setScalar(a);m.position.copy(best);g.add(m)}
+ g.scale.setScalar(Math.min(1,maxR/Rn));return g;
+}
+function atomContent(z,clip){
+ const g=new THREE.Group(),cfg=config(z),keys=sortKeys(cfg),sl=slater(z),cl=cloudFor(z);
+ const rmax=Math.max(...keys.map(k=>sl[k].rpeak)),map=r=>C.scale==='sqrt'?4.6*Math.sqrt(r/rmax):4.6*r/rmax;
+ const show=k=>!C.hideSub.has(k)&&!C.hideSh.has(+k[0]),hm=k=>!C.hi||C.hi===k||C.hi==='n'+k[0],af=k=>hm(k)?1:.1;
+ const fx=m=>{m.side=THREE.DoubleSide;if(clip)m.clippingPlanes=[clip];return m};
+ const minR=Math.min(...keys.map(k=>map(sl[k].rpeak)));
+ g.add(makeNucleus(z,Math.max(.1,minR*.55),clip));
+ const ns=[...new Set(keys.map(k=>+k[0]))];
+ if(C.lay.sh)ns.forEach(n=>{if(C.hideSh.has(n))return;const R=map(Math.max(...keys.filter(k=>+k[0]===n).map(k=>sl[k].rpeak)))*1.12+.06,col=new THREE.Color().setHSL(((n-1)/8*.75+.55)%1,.65,.62),hi=C.hi==='n'+n||(C.hi&&+C.hi[0]===n),dim=C.hi&&!hi;
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(R,48,32),fx(new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:hi?.2:dim?.025:.07,depthWrite:false}))));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(R,28,18),fx(new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:hi?.5:dim?.05:.2}))))});
+ keys.forEach(k=>{if(!show(k))return;const l=LET.indexOf(k[1]),R=map(sl[k].rpeak),c=LCOL2[l];
+  if(C.lay.sub){g.add(new THREE.Mesh(new THREE.SphereGeometry(R,40,26),fx(new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.11*(hm(k)?1.6:.3),depthWrite:false}))));
+   g.add(new THREE.Mesh(new THREE.SphereGeometry(R,22,14),fx(new THREE.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:.3*af(k)+.03}))))}
+  if(C.lay.cloud){const cc=cl.find(x=>x.key===k),P=new Float32Array(cc.R.length*3);
+   for(let i=0;i<cc.R.length;i++){const r=map(cc.R[i]);P[3*i]=cc.U[3*i]*r;P[3*i+1]=cc.U[3*i+1]*r;P[3*i+2]=cc.U[3*i+2]*r}
+   const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(P,3));
+   g.add(new THREE.Points(pg,fx(new THREE.PointsMaterial({color:c,size:.055,transparent:true,opacity:.9*af(k)+.03,depthWrite:false,sizeAttenuation:true}))))}
+  if(!C.cutOn&&(C.lay.sub||C.hi===k)&&hm(k)){const s=textSprite(k+SUPD[0],hex(c),.55,2);s.material.map.dispose();const cv=document.createElement('canvas');cv.width=256;cv.height=128;const x=cv.getContext('2d');x.font='bold 64px sans-serif';x.fillStyle=hex(c);x.textAlign='center';x.textBaseline='middle';
+   x.fillText(k+String(cfg[k]).split('').map(d=>SUPD[d]).join(''),128,66);s.material.map=new THREE.CanvasTexture(cv);s.position.set(0,R,0);g.add(s)}});
+ return g;
+}
+function cwRebuild(){
+ cwInit();clearGroup(cwRoot);const z=S.sel;C.z=z;
+ if(!C.cutOn){C.halves=null;cwRoot.add(atomContent(z,null))}
+ else{const n=axisVec(),pA=new THREE.Plane(n.clone(),0),pB=new THREE.Plane(n.clone().negate(),0),wA=new THREE.Plane(),wB=new THREE.Plane();
+  const A=atomContent(z,wA),B=atomContent(z,wB);cwRoot.add(A);cwRoot.add(B);C.halves=[{g:A,l:pA,w:wA,s:1},{g:B,l:pB,w:wB,s:-1}]}
+ cwFrame(0);cwLayers();
+}
+const ease=t=>t*t*(3-2*t);
+function cwFrame(dt){
+ const d=C.splitTarget-C.splitT;if(Math.abs(d)>1e-4)C.splitT+=Math.sign(d)*Math.min(Math.abs(d),dt/.9);
+ if(!C.halves)return;const t=ease(Math.max(0,Math.min(1,C.splitT))),n=axisVec(),hinge=C.axis==='y'?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0),dd=C.off*4.6;
+ C.halves[0].l.constant=-dd;C.halves[1].l.constant=dd;
+ C.halves.forEach(h=>{h.g.position.copy(n).multiplyScalar(h.s*C.gap*t/2);h.g.quaternion.setFromAxisAngle(hinge,h.s*C.hinge*Math.PI/180*t);h.g.updateMatrixWorld(true);h.w.copy(h.l).applyMatrix4(h.g.matrixWorld)});
+ C.halves[0].g.visible=!C.hideFront;
+ const b=$('#split-btn');if(b){const lab=C.splitTarget?Lg('Reassemble','بازسازی'):Lg('Split atom','جدا کردن اتم');if(b.textContent!==lab)b.textContent=lab}
+}
+function cwApplyView(v){const P=VIEWS[v];C.view=v;C.lay={sh:P.sh,sub:P.sub,cloud:P.cloud};C.cutOn=!!P.cut;C.hideFront=!!P.front;C.splitTarget=P.split?1:0;if(!P.split&&C.splitT>0&&!P.cut)C.splitT=0;C.hi=null;cwRebuild();cwCtl()}
+function cwViews(){$('#cw-views').innerHTML=Object.keys(VIEWS).map(k=>`<button data-v="${k}" aria-pressed="${C.view===k}">${Lg(...VNAME[k])}</button>`).join('');
+ $$('#cw-views button').forEach(b=>b.onclick=()=>{cwApplyView(b.dataset.v);cwViews()})}
+function cwCtl(){
+ $('#cw-ctl').innerHTML=`<h2>${Lg('Cutting plane & split','صفحه برش و جدا کردن')}</h2>
+ <div class="row"><span class="note">${Lg('Cut direction (plane normal)','جهت برش')}</span>${['x','y','z'].map(a=>`<button data-ax="${a}" aria-pressed="${C.axis===a}">${a}</button>`).join('')}</div>
+ <div class="row"><label><input type="checkbox" id="c-cut" ${C.cutOn?'checked':''}> ${Lg('Cut the atom (two halves)','برش اتم (دو نیمه)')}</label><label><input type="checkbox" id="c-front" ${C.hideFront?'checked':''}> ${Lg('Hide front half','پنهان کردن نیمه جلویی')}</label></div>
+ <label class="sl">${Lg('Plane position','موقعیت صفحه')}<input type="range" id="c-off" min="-100" max="100" value="${C.off*100}"></label>
+ <div class="row"><button id="split-btn"></button></div>
+ <label class="sl">${Lg('Separation (gap)','فاصله دو نیمه')}<input type="range" id="c-gap" min="0" max="14" step=".1" value="${C.gap}"></label>
+ <label class="sl">${Lg('Open halves (hinge angle)','باز کردن نیمه‌ها (زاویه لولا)')}<input type="range" id="c-hinge" min="0" max="80" value="${C.hinge}"></label>
+ <div class="row"><span class="note">${Lg('Radial scale','مقیاس شعاعی')}</span><button data-sc="sqrt" aria-pressed="${C.scale==='sqrt'}">${Lg('compressed (√r)','فشرده (√r)')}</button><button data-sc="lin" aria-pressed="${C.scale==='lin'}">${Lg('true (linear)','واقعی (خطی)')}</button><button id="c-reset">${Lg('Reset camera','بازنشانی دوربین')}</button></div>`;
+ $$('#cw-ctl [data-ax]').forEach(b=>b.onclick=()=>{C.axis=b.dataset.ax;cwRebuild();cwCtl()});
+ $$('#cw-ctl [data-sc]').forEach(b=>b.onclick=()=>{C.scale=b.dataset.sc==='lin'?'lin':'sqrt';cwRebuild();cwCtl()});
+ $('#c-cut').onchange=e=>{C.cutOn=e.target.checked;if(!C.cutOn){C.splitTarget=0;C.splitT=0}cwRebuild();cwCtl()};
+ $('#c-front').onchange=e=>{C.hideFront=e.target.checked;cwFrame(0)};
+ $('#c-off').oninput=e=>{C.off=e.target.value/100;cwFrame(0)};$('#c-gap').oninput=e=>{C.gap=+e.target.value};$('#c-hinge').oninput=e=>{C.hinge=+e.target.value};
+ $('#split-btn').onclick=()=>{if(!C.cutOn){C.cutOn=true;cwRebuild();cwCtl()}C.splitTarget=C.splitTarget?0:1};$('#c-reset').onclick=()=>cwV.reset();
+ cwFrame(0);
+}
+function cwLayers(){
+ const z=S.sel,cfg=config(z),keys=sortKeys(cfg),sl=slater(z),ns=[...new Set(keys.map(k=>+k[0]))];
+ $('#cw-layers').innerHTML=`<h2>${Lg('Shells & subshells','لایه‌ها (Shells) و زیرلایه‌ها (Subshells)')}</h2><div class="note" style="margin:0 0 6px">${Lg('Checkbox = show/hide · ◉ = highlight · “only” = isolate','تیک = نمایش/پنهان · ◉ = برجسته‌سازی · «فقط» = جداسازی')}</div>`+
+ ns.map(n=>{const ks=keys.filter(k=>+k[0]===n),tot=ks.reduce((a,k)=>a+cfg[k],0);
+  return `<div class="shl"><div class="row" style="margin:2px 0"><label><input type="checkbox" data-sh="${n}" ${C.hideSh.has(n)?'':'checked'}> <b>n=${n}</b> <span class="note">${tot} e⁻ / ${2*n*n}</span></label><button data-hi="n${n}" class="${C.hi==='n'+n?'on':''}" style="padding:2px 8px">◉</button><button data-only="${n}" style="padding:2px 8px">${Lg('only','فقط')}</button></div>
+  <div class="row" style="margin:0 0 4px 22px">${ks.map(k=>{const l=LET.indexOf(k[1]);return `<label style="color:${hex(LCOL2[l])}"><input type="checkbox" data-sub="${k}" ${C.hideSub.has(k)?'':'checked'}> ${k}<sup>${cfg[k]}</sup></label><button data-hi="${k}" class="${C.hi===k?'on':''}" style="padding:0 6px;font-size:12px" title="Z* ${sl[k].zeff.toFixed(2)}">◉</button>`}).join(' ')}</div></div>`}).join('')+
+ `<div class="row"><button id="c-all">${Lg('Show all','نمایش همه')}</button><button id="c-clearhi">${Lg('Clear highlight','حذف برجسته‌سازی')}</button></div>`;
+ $$('#cw-layers [data-sh]').forEach(b=>b.onchange=()=>{b.checked?C.hideSh.delete(+b.dataset.sh):C.hideSh.add(+b.dataset.sh);cwRebuild()});
+ $$('#cw-layers [data-sub]').forEach(b=>b.onchange=()=>{b.checked?C.hideSub.delete(b.dataset.sub):C.hideSub.add(b.dataset.sub);cwRebuild()});
+ $$('#cw-layers [data-hi]').forEach(b=>b.onclick=()=>{C.hi=C.hi===b.dataset.hi?null:b.dataset.hi;cwRebuild()});
+ $$('#cw-layers [data-only]').forEach(b=>b.onclick=()=>{C.hideSh=new Set(ns.filter(n=>n!==+b.dataset.only));C.hideSub.clear();cwRebuild()});
+ $('#c-all').onclick=()=>{C.hideSh.clear();C.hideSub.clear();C.hi=null;cwRebuild()};$('#c-clearhi').onclick=()=>{C.hi=null;cwRebuild()};
+}
+function renderCutaway(){
+ cwInit();C.hideSh.clear();C.hideSub.clear();C.hi=null;cwViews();cwCtl();cwRebuild();
+ $('#cw-note').innerHTML=`<b>${Lg('Educational visualization.','نمایش آموزشی.')}</b> ${Lg(
+  'Translucent spheres are reference surfaces placed at the radial maximum of each Slater-type subshell density (Slater’s rules for Z*); shells are not physical layers. Dots are samples of electron probability density (Slater radial part × exact real angular functions), not electron positions or trajectories. Default radial scale is compressed (√r) so inner shells stay visible; switch to “true (linear)” for proportional radii. Z* from Slater’s rules is an approximation, poorest for heavy elements.',
+  'کره‌های شفاف فقط سطوح مرجع‌اند که در بیشینه چگالی شعاعی هر زیرلایه (نوع اسلیتر، قواعد اسلیتر برای Z*) قرار گرفته‌اند؛ لایه‌ها لایه‌های فیزیکی نیستند. نقاط نمونه‌هایی از چگالی احتمال الکترون‌اند (بخش شعاعی اسلیتر × توابع زاویه‌ای دقیق)، نه مکان یا مسیر الکترون. مقیاس شعاعی پیش‌فرض فشرده (√r) است تا لایه‌های درونی دیده شوند؛ برای نسبت‌های واقعی «واقعی (خطی)» را بزنید. Z* اسلیتر تقریبی است و برای عناصر سنگین ضعیف‌تر.')}`;
+}
+
+// ============ ELECTRON CONFIGURATION ============
+function boxesHTML(z,o={}){
+ return hundBoxes(z,true).map(b=>{const nm=ORB[b.l].map(x=>x.name);
+  return `<div class="brow${b.empty?' emp':''}"><span class="bl">${b.key}<sup>${b.e}</sup></span><span class="bb">${b.occ.map((oc,i)=>`<span class="box${o.sel&&o.sel.key===b.key&&o.sel.k===i?' on':''}${o.click?' ck':''}" data-key="${b.key}" data-k="${i}" title="${nm[i]}"><b>${oc===2?'↑↓':oc===1?'↑':''}</b><i>${nm[i]}</i></span>`).join('')}</span><span class="note" style="margin:0">${b.empty?Lg('empty (not in ground state)','خالی (در حالت پایه نیست)'):b.e+' / '+2*(2*b.l+1)}</span></div>`}).join('');
+}
+function renderEconfig(){
+ const z=S.sel,e=EL[z-1],o=config(z),sc=spinCounts(z),sh=shells(z);
+ $('#ec-a').innerHTML=`<h2>${Lg('Electron configuration','آرایش الکترونی (Electron configuration)')}</h2><div class="cfg" style="font-size:16px">${cfgText(o)}</div>
+  <h2 style="margin-top:12px">${Lg('Noble-gas shorthand','آرایش فشرده گاز نجیب')}</h2><div class="cfg" style="font-size:16px">${shorthand(z)}</div>
+  ${e.exception?`<div class="warn">${Lg('Exception to simple Aufbau filling (ground state from NIST). Half-filled/filled d (or f) subshells and the small 4s–3d / 5s–4d / 6s–5d–4f energy gaps make the Madelung rule unreliable for such atoms; no simple rule predicts every case.','استثنا از قاعده ساده آفبا (حالت پایه از NIST). نیمه‌پر/پر بودن زیرلایه d یا f و اختلاف انرژی کم 4s–3d و مشابه آن قاعده مادلونگ را برای این اتم‌ها ناکافی می‌کند؛ هیچ قاعده ساده‌ای همه موارد را پیش‌بینی نمی‌کند.')}</div>`:''}
+  ${e.predicted?`<div class="warn">${Lg('Predicted configuration (Z>103), not experimentally established.','آرایش پیش‌بینی‌شده (Z>103)، تأیید تجربی ندارد.')}</div>`:''}
+  <h2 style="margin-top:12px">${Lg('Counts','شمارش')}</h2>
+  <dl class="kv"><dt>${Lg('Electrons','الکترون‌ها')}</dt><dd>${z}</dd><dt>${Lg('Unpaired electrons','الکترون‌های جفت‌نشده (Unpaired)')}</dt><dd><b>${sc.unpaired}</b></dd><dt>${Lg('Paired electrons','الکترون‌های جفت‌شده (Paired)')}</dt><dd><b>${sc.paired}</b></dd><dt>${Lg('Per shell','در هر لایه')}</dt><dd class="cfg">${Object.keys(sh).map(n=>'n='+n+': '+sh[n]).join(' · ')}</dd></dl>
+  <h2 style="margin-top:12px">${Lg('Filling order (Madelung / Aufbau)','ترتیب پر شدن (مادلونگ / آفبا)')}</h2><div class="cfg note">1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p 7s 5f 6d 7p</div>
+  <p class="note">${Lg('Rules: Aufbau (lowest-energy first), Pauli exclusion (≤2 electrons per orbital, opposite spins), Hund (fill degenerate orbitals singly with parallel spins first).','قواعد: آفبا (ابتدا پایین‌ترین انرژی)، طرد پاولی (حداکثر ۲ الکترون در هر اوربیتال با اسپین مخالف)، هوند (ابتدا اوربیتال‌های هم‌انرژی تک‌تک با اسپین موازی).')}</p>`;
+ $('#ec-b').innerHTML=`<h2>${Lg('Orbital box diagram','نمودار جعبه‌ای اوربیتال‌ها (Orbital boxes)')}</h2>${boxesHTML(z,{click:true})}
+  <p class="note">${Lg('↑ = ms +½, ↓ = ms −½. Which degenerate orbital of a partly filled subshell is filled first is arbitrary. Click a box to open it in the orbital viewer.','↑ = ms +½ ، ↓ = ms −½. انتخاب اینکه کدام اوربیتال هم‌انرژی زودتر پر شود قراردادی است. برای دیدن اوربیتال روی جعبه کلیک کنید.')}</p>`;
+ $$('#ec-b .box').forEach(b=>b.onclick=()=>{EO.key=b.dataset.key;EO.k=+b.dataset.k;dirty.add('elorbital');showTab('elorbital')});
+}
+
+// ============ GENERAL ORBITAL EXPLORER ============
+const OG={l:0,n:1,k:0,cmp:false,l2:1,n2:2,k2:0,mode:'phase',p:90,q:52,axes:true,nuc:true,rn:true,an:false,common:false,sAxis:'z',sPos:0};
+let ogScene=null;
+const MODES={phase:['Wavefunction phase (±)','فاز تابع موج (±)'],density:['Probability density (point cloud)','چگالی احتمال (ابر نقطه‌ای)'],nodal:['Nodal surfaces','سطوح گرهی (Nodal)'],iso:['Transparent probability isosurface','هم‌سطح احتمال شفاف'],slice:['Cross-section','برش مقطعی']};
+function orbSelectors(pre,st,lk,nk,kk){
+ return `<span class="note">${pre}</span>${[0,1,2,3].map(l=>`<button data-${lk}="${l}" aria-pressed="${st[lk]===l}">${'spdf'[l]}</button>`).join('')}
+ <select data-${nk}>${Array.from({length:7-st[lk]},(_,i)=>st[lk]+1+i).map(n=>`<option value="${n}" ${n===st[nk]?'selected':''}>n=${n}</option>`).join('')}</select>
+ <select data-${kk}>${ORB[st[lk]].map((o,i)=>`<option value="${i}" ${i===st[kk]?'selected':''}>${o.name}</option>`).join('')}</select>`}
+function ogCtl(){
+ $('#og-ctl').innerHTML=`<div class="row">${orbSelectors(Lg('Orbital A','اوربیتال A'),OG,'l','n','k')}</div>
+ <div class="row"><label><input type="checkbox" id="g-cmp" ${OG.cmp?'checked':''}> ${Lg('Compare with second orbital','مقایسه با اوربیتال دوم')}</label>${OG.cmp?orbSelectors('B',OG,'l2','n2','k2'):''}</div>
+ <div class="row"><select id="g-mode">${Object.keys(MODES).map(m=>`<option value="${m}" ${m===OG.mode?'selected':''}>${Lg(...MODES[m])}</option>`).join('')}</select>
+ <select id="g-q"><option value="38" ${OG.q==38?'selected':''}>${Lg('quality: low','کیفیت: کم')}</option><option value="52" ${OG.q==52?'selected':''}>${Lg('quality: medium','کیفیت: متوسط')}</option><option value="72" ${OG.q==72?'selected':''}>${Lg('quality: high','کیفیت: زیاد')}</option></select></div>
+ <label class="sl">${Lg('Probability enclosed by surface','احتمال محصور در سطح')}: <b id="g-pv">${OG.p}%</b><input type="range" id="g-p" min="50" max="99" value="${OG.p}"></label>
+ ${OG.mode==='slice'?`<div class="row"><span class="note">${Lg('Slice plane normal','نرمال صفحه برش')}</span>${['x','y','z'].map(a=>`<button data-sa="${a}" aria-pressed="${OG.sAxis===a}">${a}</button>`).join('')}</div><label class="sl">${Lg('Slice position','موقعیت برش')}<input type="range" id="g-sp" min="-90" max="90" value="${OG.sPos*100}"></label>`:''}
+ <div class="row"><label><input type="checkbox" id="g-ax" ${OG.axes?'checked':''}> ${Lg('axes','محورها')}</label><label><input type="checkbox" id="g-nu" ${OG.nuc?'checked':''}> ${Lg('nucleus','هسته')}</label><label><input type="checkbox" id="g-rn" ${OG.rn?'checked':''}> ${Lg('radial nodes','گره‌های شعاعی')}</label><label><input type="checkbox" id="g-an" ${OG.an?'checked':''}> ${Lg('angular nodes','گره‌های زاویه‌ای')}</label><label><input type="checkbox" id="g-co" ${OG.common?'checked':''}> ${Lg('same length scale (compare)','مقیاس یکسان (مقایسه)')}</label><button id="g-reset">${Lg('Reset camera','بازنشانی دوربین')}</button></div>`;
+ const fix=(lk,nk,kk)=>{if(OG[nk]<OG[lk]+1)OG[nk]=OG[lk]+1;if(OG[kk]>=ORB[OG[lk]].length)OG[kk]=0};
+ $$('#og-ctl [data-l]').forEach(b=>b.onclick=()=>{OG.l=+b.dataset.l;fix('l','n','k');ogUpdate()});$$('#og-ctl [data-l2]').forEach(b=>b.onclick=()=>{OG.l2=+b.dataset.l2;fix('l2','n2','k2');ogUpdate()});
+ [['n','n'],['k','k'],['n2','n2'],['k2','k2']].forEach(([a])=>{const s=$(`#og-ctl select[data-${a}]`);if(s)s.onchange=()=>{OG[a]=+s.value;ogRender();ogInfo()}});
+ $('#g-cmp').onchange=e=>{OG.cmp=e.target.checked;ogUpdate()};$('#g-mode').onchange=e=>{OG.mode=e.target.value;ogUpdate()};$('#g-q').onchange=e=>{OG.q=+e.target.value;ogRender()};
+ $('#g-p').oninput=e=>{OG.p=+e.target.value;$('#g-pv').textContent=OG.p+'%'};$('#g-p').onchange=ogRender;
+ $$('#og-ctl [data-sa]').forEach(b=>b.onclick=()=>{OG.sAxis=b.dataset.sa;ogUpdate()});const sp=$('#g-sp');if(sp)sp.onchange=()=>{OG.sPos=sp.value/100;ogRender()};
+ [['g-ax','axes'],['g-nu','nuc'],['g-rn','rn'],['g-an','an'],['g-co','common']].forEach(([id,k])=>$('#'+id).onchange=e=>{OG[k]=e.target.checked;ogRender()});
+ $('#g-reset').onclick=()=>ogScene.v.reset();
+}
+function ogUpdate(){ogCtl();ogRender();ogInfo()}
+let ogTimer=null;
+function busy(id,on){const b=$('#'+id);b.style.display=on?'block':'none';b.textContent=Lg('computing…','در حال محاسبه…')}
+function ogRender(){
+ if(!ogScene)ogScene=new OrbScene($('#og-gl'));busy('og-busy',true);clearTimeout(ogTimer);
+ ogTimer=setTimeout(()=>{const list=[{n:OG.n,l:OG.l,k:OG.k}];if(OG.cmp)list.push({n:OG.n2,l:OG.l2,k:OG.k2});
+  ogScene.show(list,{mode:OG.mode,p:OG.p,N:OG.q,axes:OG.axes,nuc:OG.nuc,radNodes:OG.rn,angNodes:OG.an,common:OG.common,sAxis:OG.sAxis,sPos:OG.sPos});busy('og-busy',false)},20);
+}
+function mlText(l,k){const o=ORB[l][k];return o.m===0?'m<sub>l</sub> = 0':`m<sub>l</sub> = ±${o.m} ${Lg('(real combination)','(ترکیب حقیقی)')}`}
+function orbInfoHTML(n,l,k,title){
+ const o=ORB[l][k],rn=radialNodes(n,l),ext=radialExtent(n,l);
+ return `<h2>${title}${n}${o.name}</h2><dl class="kv">
+ <dt>${Lg('Principal n','اصلی n')}</dt><dd>${n}</dd><dt>${Lg('Angular momentum l','سمتی l')}</dt><dd>${l} (${LNAME[l]})</dd><dt>${Lg('Magnetic','مغناطیسی')}</dt><dd>${mlText(l,k)}</dd><dt>m<sub>s</sub></dt><dd>±½ (${Lg('per electron','برای هر الکترون')})</dd>
+ <dt>${Lg('Radial nodes','گره‌های شعاعی')}</dt><dd>n−l−1 = ${n-l-1}${rn.length?' → r = '+rn.map(r=>r.toFixed(2)).join(', ')+' a₀':''}</dd>
+ <dt>${Lg('Angular nodes','گره‌های زاویه‌ای')}</dt><dd>l = ${l}</dd><dt>${Lg('Total nodes','کل گره‌ها')}</dt><dd>n−1 = ${n-1}</dd>
+ <dt>${Lg('Box half-width','نصف عرض جعبه')}</dt><dd>${ext.toFixed(1)} a₀ (99.95 % radial)</dd></dl>
+ <div class="cfg" style="margin-top:8px">ψ<sub>${n}${o.name}</sub>(r,θ,φ) = R<sub>${n}${l}</sub>(r) · Y</div><div class="cfg note">Y = ${o.ang}</div>`}
+function ogInfo(){
+ $('#og-info').innerHTML=orbInfoHTML(OG.n,OG.l,OG.k,OG.cmp?'A: ':'')+(OG.cmp?`<hr style="border-color:var(--line)">`+orbInfoHTML(OG.n2,OG.l2,OG.k2,'B: '):'');
+ $('#og-expl').innerHTML=`<h2>${Lg('How to read this','چگونه بخوانیم')}</h2>
+ <p><b>ψ</b>: ${Lg('R<sub>nl</sub>(r) = √[(2Z/n a₀)³ (n−l−1)! / (2n (n+l)!)] · e<sup>−ρ/2</sup> ρ<sup>l</sup> L<sup>2l+1</sup><sub>n−l−1</sub>(ρ), ρ = 2Zr/(n a₀). Orbitals here use the exact hydrogenic radial functions with Z = 1 and real combinations of spherical harmonics.','R<sub>nl</sub>(r) = √[(2Z/n a₀)³ (n−l−1)! / (2n (n+l)!)] · e<sup>−ρ/2</sup> ρ<sup>l</sup> L<sup>2l+1</sup><sub>n−l−1</sub>(ρ) با ρ = 2Zr/(n a₀). اوربیتال‌ها اینجا با توابع شعاعی دقیق هیدروژن‌گونه (Z=1) و ترکیب‌های حقیقی هماهنگ‌های کروی رسم شده‌اند.')}</p>
+ <p>${Lg('<b>Blue/red = sign (phase) of ψ</b>, not electric charge. The surface shown encloses the chosen percentage of the electron probability density |ψ|²; it is a visualization threshold on a continuous distribution, not a physical wall.','<b>آبی/قرمز = علامت (فاز) ψ</b> است، نه بار الکتریکی. سطح نمایش‌داده‌شده درصد انتخابی از چگالی احتمال |ψ|² را دربر می‌گیرد؛ آستانه‌ای نمایشی روی توزیعی پیوسته است، نه دیوار فیزیکی.')}</p>
+ <p>${Lg('Orbital <i>shapes</i> (angular part) depend only on l and m<sub>l</sub> and are the same in every atom. In many-electron atoms the radial part differs (nuclear charge, screening), so sizes here are those of hydrogen, not of a specific element. Radial nodes are drawn analytically (exact radii); very close inner nodes of high-n orbitals can be too thin for the mesh to resolve.','<i>شکل</i> اوربیتال (بخش زاویه‌ای) فقط به l و m<sub>l</sub> بستگی دارد و در همه اتم‌ها یکسان است. در اتم‌های چندالکترونی بخش شعاعی (بار هسته و پوشش) فرق می‌کند، پس اندازه‌ها مربوط به هیدروژن‌اند نه یک عنصر خاص. گره‌های شعاعی به‌صورت تحلیلی با شعاع دقیق رسم می‌شوند؛ گره‌های درونی بسیار نزدیک در n بالا ممکن است برای مش بیش از حد نازک باشند.')}</p>
+ <p class="note">${Lg('Modes: phase = ±ψ isosurfaces; density = Monte-Carlo sampling of |ψ|²; nodal = ψ=0 surfaces (yellow spheres: radial; grey: angular); isosurface = translucent; cross-section = ψ on a movable plane (blue +, red −, brightness ∝ |ψ|^0.8).','حالت‌ها: فاز = هم‌سطح ±ψ؛ چگالی = نمونه‌گیری مونت‌کارلو از |ψ|²؛ گرهی = سطوح ψ=0 (کره زرد: شعاعی؛ خاکستری: زاویه‌ای)؛ هم‌سطح = شفاف؛ مقطع = ψ روی صفحه متحرک (آبی +، قرمز −).')}</p>`;
+}
+function renderOrbital(){ogCtl();ogRender();ogInfo()}
+
+// ============ ELEMENT-SPECIFIC ORBITALS ============
+const EO={key:'',k:0,view:'geom',mode:'phase',p:90};
+let eoScene=null;
+function eoDefault(){const bx=hundBoxes(S.sel);if(!bx.find(b=>b.key===EO.key)){const part=bx.filter(b=>b.e<2*(2*b.l+1));const b=(part.length?part:bx).slice(-1)[0];EO.key=b.key;EO.k=0}
+ const b=hundBoxes(S.sel).find(b=>b.key===EO.key);if(EO.k>=2*b.l+1)EO.k=0}
+function renderElOrbital(){
+ eoDefault();const z=S.sel;
+ $('#eo-boxes').innerHTML=`<h2>${Lg('Occupied & empty orbitals','اوربیتال‌های پر و خالی')}</h2>${boxesHTML(z,{click:true,sel:{key:EO.key,k:EO.k}})}<p class="note">${Lg('Click an orbital box. Occupancy follows Aufbau, Pauli and Hund (ground state from the configuration table).','روی جعبه یک اوربیتال کلیک کنید. اشغال‌شدگی از آفبا، پاولی و هوند پیروی می‌کند.')}</p>`;
+ $$('#eo-boxes .box').forEach(b=>b.onclick=()=>{EO.key=b.dataset.key;EO.k=+b.dataset.k;renderElOrbital()});
+ $('#eo-ctl').innerHTML=`<div class="row"><button data-v="geom" aria-pressed="${EO.view==='geom'}">${Lg('Orbital geometry','هندسه اوربیتال')}</button><button data-v="occ" aria-pressed="${EO.view==='occ'}">${Lg('Orbital occupancy','اشغال‌شدگی اوربیتال‌ها')}</button></div>
+ <div class="row"><select id="e-mode">${['phase','iso','density','nodal','slice'].map(m=>`<option value="${m}" ${m===EO.mode?'selected':''}>${Lg(...MODES[m])}</option>`).join('')}</select></div>
+ <label class="sl">${Lg('Probability enclosed','احتمال محصور')}: <b id="e-pv">${EO.p}%</b><input type="range" id="e-p" min="50" max="99" value="${EO.p}"></label>
+ <p class="note">${Lg('Geometry: the selected orbital. Occupancy: all orbitals of the selected subshell overlaid; opaque = 2 electrons, half-transparent = 1, ghost = empty. Shapes are hydrogenic and element-independent; only the occupation changes with the element.','هندسه: اوربیتال انتخاب‌شده. اشغال‌شدگی: همه اوربیتال‌های زیرلایه انتخاب‌شده روی هم؛ پررنگ = ۲ الکترون، نیمه‌شفاف = ۱، شبح = خالی. شکل‌ها هیدروژن‌گونه و مستقل از عنصرند؛ فقط اشغال‌شدگی با عنصر تغییر می‌کند.')}</p>`;
+ $$('#eo-ctl [data-v]').forEach(b=>b.onclick=()=>{EO.view=b.dataset.v;renderElOrbital()});
+ $('#e-mode').onchange=e=>{EO.mode=e.target.value;eoDraw()};$('#e-p').oninput=e=>{EO.p=+e.target.value;$('#e-pv').textContent=EO.p+'%'};$('#e-p').onchange=eoDraw;
+ eoDraw();eoInfo();
+}
+function eoDraw(){
+ if(!eoScene)eoScene=new OrbScene($('#eo-gl'));busy('eo-busy',true);
+ setTimeout(()=>{const b=hundBoxes(S.sel).find(x=>x.key===EO.key);if(!b){busy('eo-busy',false);return}
+  let list;if(EO.view==='occ')list=ORB[b.l].map((o,i)=>({n:b.n,l:b.l,k:i,opacity:b.occ[i]===2?.85:b.occ[i]===1?.5:.1}));else list=[{n:b.n,l:b.l,k:EO.k}];
+  eoScene.show(list,{mode:EO.view==='occ'?(EO.mode==='phase'||EO.mode==='iso'?'iso':EO.mode):EO.mode,p:EO.p,N:44,axes:true,nuc:true,radNodes:true,angNodes:false,overlay:EO.view==='occ',sAxis:'z',sPos:0});busy('eo-busy',false)},20);
+}
+function eoInfo(){
+ const z=S.sel,e=EL[z-1],b=hundBoxes(z).find(x=>x.key===EO.key);if(!b)return;const sc=spinCounts(z);
+ const rows=[];b.occ.forEach((oc,i)=>{const nm=ORB[b.l][i].name;if(oc>=1)rows.push([nm,b.n,b.l,mlText(b.l,i),'+½ ↑']);if(oc===2)rows.push([nm,b.n,b.l,mlText(b.l,i),'−½ ↓'])});
+ $('#eo-info').innerHTML=`<h2>${e.sym} · ${b.key}<sup>${b.e}</sup> — ${Lg('electrons in this subshell','الکترون‌های این زیرلایه')}</h2>
+ <p class="note">${Lg(`Whole atom: ${sc.unpaired} unpaired, ${sc.paired} paired electrons. This subshell: ${b.occ.filter(o=>o===1).length} unpaired, ${b.occ.filter(o=>o===2).length*2} paired, ${b.occ.filter(o=>o===0).length} empty orbital(s) of ${b.occ.length}.`,`کل اتم: ${sc.unpaired} الکترون جفت‌نشده و ${sc.paired} جفت‌شده. این زیرلایه: ${b.occ.filter(o=>o===1).length} جفت‌نشده، ${b.occ.filter(o=>o===2).length*2} جفت‌شده، ${b.occ.filter(o=>o===0).length} اوربیتال خالی از ${b.occ.length}.`)}</p>
+ ${rows.length?`<div class="scroll"><table class="cmp"><tr><th>${Lg('orbital','اوربیتال')}</th><th>n</th><th>l</th><th>m<sub>l</sub></th><th>m<sub>s</sub></th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</table></div>`:`<p class="note">${Lg('This subshell is empty in the ground state; its orbitals are shown as ghosts.','این زیرلایه در حالت پایه خالی است.')}</p>`}
+ ${orbInfoHTML(b.n,b.l,EO.k,Lg('Selected: ','انتخاب‌شده: '))}`;
+}
+
+// ============ SPECTRAL DATA REGISTRY ============
+const DSR={bundled:mkBundled(),imported:[],hyd:{}};
+const hydDs=z=>DSR.hyd[z]||(DSR.hyd[z]=mkHydrogenic(z));
+function datasetsFor(z){const a=[];DSR.bundled.filter(d=>d.z===z).forEach(d=>a.push(d));DSR.imported.filter(d=>d.z===z).forEach(d=>a.push(d));a.push(hydDs(z));return a}
+function dsById(id){if(!id)return null;if(id.startsWith('hyd-'))return hydDs(+id.slice(4));return DSR.bundled.concat(DSR.imported).find(d=>d.id===id)}
+const KIND={computed:['Computed (theory)','محاسبه‌شده (نظری)'],reference:['Literature reference (typed, partial)','مرجع ادبیات (واردشده، ناقص)'],imported:['Imported NIST ASD export','وارد شده از خروجی NIST ASD']};
+const SP={dsId:null,unit:'nm',medium:'nist',series:null};
+let LS=null; // selected line {id,i}
+let hiSet=null;
+
+// ============ SPECTRUM VIEW (canvas) ============
+const PRESET={xray:[0.5,100],uv:[10,400],vis:[380,750],ir:[750,5000],all:[10,2500]};
+const PALETTE=['#ff7a59','#4cc2f0','#e6d84f','#b784e6','#5fd36f','#ff8fc0'];
+class SpecView{
+ constructor(cv,o){this.cv=cv;this.o=o;this.ctx=cv.getContext('2d');this.unit='nm';this.medium='nist';this.v=[380,750];this.hits=[];this.hover=null;this.bind();new ResizeObserver(()=>this.draw()).observe(cv.parentElement)}
+ toX(vac){return this.unit==='nm'?(this.medium==='nist'?nistWl(vac):vac):this.unit==='thz'?PC.c/vac*1e-3:PC.hc_eVnm/vac}
+ nmOf(x){return this.unit==='nm'?x:this.unit==='thz'?299792.458/x:PC.hc_eVnm/x}
+ xOfNm(nm){return this.unit==='nm'?nm:this.unit==='thz'?299792.458/nm:PC.hc_eVnm/nm}
+ range(){const a=this.nmOf(this.v[0]),b=this.nmOf(this.v[1]);return[Math.min(a,b),Math.max(a,b)]}
+ setNm(a,b){const x1=this.xOfNm(a),x2=this.xOfNm(b);this.v=[Math.min(x1,x2),Math.max(x1,x2)];this.draw()}
+ setUnit(u){const r=this.range();this.unit=u;this.setNm(r[0],r[1])}
+ zoom(f,cx){const[lo,hi]=this.v,c=cx==null?(lo+hi)/2:cx,s=Math.max((hi-lo)*f,Math.max(Math.abs(hi),Math.abs(lo))*1e-5);this.v=[c-(c-lo)/(hi-lo)*s,c+(hi-c)/(hi-lo)*s];this.draw()}
+ pad(){return{l:14,r:14,t:30,b:50}}
+ bind(){const cv=this.cv,ptr=new Map();let moved=0;cv.style.touchAction='none';
+  const xval=px=>{const p=this.pad(),W=cv.clientWidth;return this.v[0]+(px-p.l)/(W-p.l-p.r)*(this.v[1]-this.v[0])};
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.offsetX,y:e.offsetY});moved=0});
+  cv.addEventListener('pointerup',e=>{ptr.delete(e.pointerId);if(moved<5)this.click(e.offsetX,e.offsetY)});
+  cv.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
+  cv.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);const W=cv.clientWidth,pd=this.pad(),pw=W-pd.l-pd.r;
+   if(!p){this.hover=this.near(e.offsetX,e.offsetY);cv.style.cursor=this.hover?'pointer':'grab';this.draw();return}
+   if(ptr.size===1){const dx=e.offsetX-p.x;moved+=Math.abs(dx);const sh=dx/pw*(this.v[1]-this.v[0]);this.v=[this.v[0]-sh,this.v[1]-sh];p.x=e.offsetX;p.y=e.offsetY;this.draw()}
+   else if(ptr.size===2){const ids=[...ptr.keys()],a=ptr.get(ids[0]),b=ptr.get(ids[1]);const d0=Math.abs(a.x-b.x);p.x=e.offsetX;const d1=Math.abs(a.x-b.x);moved+=9;if(d0>5&&d1>5)this.zoom(d0/d1,xval((a.x+b.x)/2))}});
+  cv.addEventListener('wheel',e=>{e.preventDefault();this.zoom(Math.exp(e.deltaY*.0016),xval(e.offsetX))},{passive:false});
+  cv.addEventListener('pointerleave',()=>{this.hover=null;this.draw()});
+ }
+ near(x,y){let b=null,bd=9;for(const h of this.hits){const d=Math.abs(h.x-x);if(d<bd&&y>=h.y0-6&&y<=h.y1+6){bd=d;b=h}}return b}
+ click(x,y){const h=this.near(x,y);if(h&&this.o.onSelect)this.o.onSelect(h.ref)}
+ ticks(lo,hi,n){const raw=(hi-lo)/n,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p,st=(m<1.5?1:m<3.5?2:m<7.5?5:10)*p,out=[];for(let t=Math.ceil(lo/st)*st;t<=hi+1e-9;t+=st)out.push(+t.toPrecision(12));return out}
+ fmt(v){const a=Math.abs(v);return a>=1000?v.toFixed(0):a>=100?v.toFixed(1):a>=10?v.toFixed(2):a>=1?v.toFixed(3):v.toPrecision(3)}
+ draw(){
+  const cv=this.cv,W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;const dpr=devicePixelRatio||1;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  const x=this.ctx;x.setTransform(dpr,0,0,dpr,0,0);const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),mut=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim(),bg=cs.getPropertyValue('--bg').trim();
+  x.clearRect(0,0,W,H);const p=this.pad(),pw=W-p.l-p.r,ph=H-p.t-p.b,[lo,hi]=this.v;const X=v=>p.l+(v-lo)/(hi-lo)*pw;
+  x.fillStyle=bg;x.fillRect(p.l,p.t,pw,ph);
+  // spectral band
+  const by=p.t+ph+2,bh=11;for(let i=0;i<pw;i+=2){const nm=this.nmOf(lo+(i+1)/pw*(hi-lo)),c=wl2rgb(nm);x.fillStyle=c?`rgb(${c})`:line;if(!c){x.globalAlpha=.55}x.fillRect(p.l+i,by,2.5,bh);x.globalAlpha=1}
+  x.font='10px sans-serif';x.fillStyle=mut;x.textAlign='center';
+  [[0,10,'X-ray/EUV'],[10,380,'UV'],[380,750,Lg('visible','مرئی')],[750,1e7,'IR']].forEach(([a,b,t])=>{const xa=X(this.xOfNm(a||1e-3)),xb=X(this.xOfNm(b));const L1=Math.max(p.l,Math.min(xa,xb)),R1=Math.min(p.l+pw,Math.max(xa,xb));if(R1-L1>34)x.fillText(t,(L1+R1)/2,by+bh+10)});
+  // axes
+  x.strokeStyle=line;x.fillStyle=mut;x.textAlign='center';x.font='11px sans-serif';
+  this.ticks(lo,hi,Math.max(3,Math.floor(pw/90))).forEach(t=>{const px=X(t);x.beginPath();x.moveTo(px,p.t);x.lineTo(px,p.t+ph);x.globalAlpha=.35;x.stroke();x.globalAlpha=1;x.fillText(this.fmt(t),px,H-4)});
+  const ul={nm:this.medium==='nist'?Lg('wavelength λ (nm) — NIST convention: vacuum <200 & >2000 nm, air between','طول موج λ (nm) — قرارداد NIST: خلأ زیر ۲۰۰ و بالای ۲۰۰۰، هوا بین آن‌ها'):Lg('vacuum wavelength λ (nm)','طول موج در خلأ λ (nm)'),thz:Lg('frequency ν (THz)','بسامد ν (THz)'),ev:Lg('photon energy E (eV)','انرژی فوتون E (eV)')}[this.unit];
+  x.textAlign='left';x.fillText(ul,p.l,H-16);
+  const su=this.unit==='nm'?'ev':this.unit==='ev'?'nm':'nm';x.textAlign='center';
+  const[n1,n2]=this.range();const sec=this.unit==='nm'?this.ticks(PC.hc_eVnm/n2,PC.hc_eVnm/n1,Math.max(3,Math.floor(pw/110))):this.ticks(n1,n2,Math.max(3,Math.floor(pw/110)));
+  sec.forEach(t=>{const nm=su==='ev'?PC.hc_eVnm/t:t;if(!(nm>0))return;const px=X(this.xOfNm(nm));if(px<p.l||px>p.l+pw)return;x.fillText(this.fmt(t),px,p.t-6);x.beginPath();x.moveTo(px,p.t-3);x.lineTo(px,p.t);x.stroke()});
+  x.textAlign='left';x.fillText(su==='ev'?'E (eV)':'λ (nm)',p.l,11);
+  // lines
+  this.hits=[];const tracks=this.o.tracks();const lanes=this.o.stacked?Math.max(1,tracks.length):1,lh=ph/lanes;
+  x.save();x.beginPath();x.rect(p.l,p.t,pw,ph);x.clip();
+  tracks.forEach((tr,ti)=>{const ds=tr.ds,base=p.t+(this.o.stacked?(ti+1)*lh:ph),hmax=lh*.9;
+   const ints=ds.lines.map(l=>l.intens).filter(v=>v>0),imin=Math.min(...ints),imax=Math.max(...ints);
+   if(this.o.stacked){x.fillStyle=tr.color;x.font='11px sans-serif';x.textAlign='left';x.fillText(ds.label,p.l+4,base-lh+12)}
+   ds.lines.forEach((ln,i)=>{const v=this.toX(ln.vac);if(v<lo||v>hi)return;const px=X(v);
+    const h=(ints.length&&ln.intens>0?(imax>imin?.2+.8*Math.log(ln.intens/imin)/Math.log(imax/imin):.8):.58)*hmax;
+    const ref={id:ds.id,i},sel=LS&&LS.id===ds.id&&LS.i===i,hl=hiSet&&hiSet.has(ds.id+':'+i);
+    const rgb=this.o.colorByWl?wl2rgb(ln.vac):null;x.strokeStyle=this.o.colorByWl?(rgb?`rgb(${rgb})`:mut):tr.color;x.lineWidth=sel||hl?3:1.6;if(this.o.colorByWl&&!rgb)x.setLineDash([4,3]);else x.setLineDash([]);
+    if(hiSet&&!hl&&!sel)x.globalAlpha=.35;x.beginPath();x.moveTo(px,base);x.lineTo(px,base-h);x.stroke();x.globalAlpha=1;x.setLineDash([]);
+    if(sel||hl){x.fillStyle=ink;x.beginPath();x.arc(px,base-h,3.5,0,7);x.fill()}
+    this.hits.push({x:px,y0:base-h,y1:base,ref,ln,ds})})});
+  x.restore();x.strokeStyle=line;x.strokeRect(p.l,p.t,pw,ph);
+  if(!tracks.length){x.fillStyle=mut;x.textAlign='center';x.font='13px sans-serif';x.fillText(Lg('No dataset selected','مجموعه داده‌ای انتخاب نشده'),W/2,p.t+ph/2)}
+  if(this.hover){const h=this.hover,ph2=photon(h.ln.vac),t=`${h.ds.label}  ${nistWl(h.ln.vac).toFixed(h.ln.vac<200?3:3)} nm  ${ph2.eV.toFixed(4)} eV`;x.font='12px sans-serif';const w=x.measureText(t).width+12;let tx=Math.min(h.x+8,W-w-4);const ty=p.t+8;x.fillStyle=cs.getPropertyValue('--panel').trim();x.fillRect(tx,ty,w,20);x.strokeStyle=line;x.strokeRect(tx,ty,w,20);x.fillStyle=ink;x.textAlign='left';x.fillText(t,tx+6,ty+14)}
+ }
+}
+
+// ---------- line detail ----------
+function eqHTML(ph){
+ return `<h2>${Lg('Equations','معادلات')}</h2><div class="cfg">E = hν &nbsp; c = λν &nbsp; E = hc/λ</div>
+ <p class="note">${Lg('E: photon energy; ν: frequency (how fast the light wave oscillates); λ: vacuum wavelength; h = 6.62607015×10⁻³⁴ J·s; c = 299 792 458 m/s (exact SI values). An atom that falls from a higher energy state to a lower one releases ΔE = E<sub>upper</sub> − E<sub>lower</sub> as one photon, so ΔE = hν = hc/λ.','E: انرژی فوتون؛ ν: بسامد؛ λ: طول موج در خلأ؛ h = 6.62607015×10⁻³⁴ J·s؛ c = 299 792 458 m/s (مقادیر دقیق SI). اتمی که از حالت پرانرژی‌تر به حالت کم‌انرژی‌تر می‌رود ΔE = E<sub>بالا</sub> − E<sub>پایین</sub> را به صورت یک فوتون آزاد می‌کند: ΔE = hν = hc/λ.')}</p>
+ ${ph?`<div class="cfg">ν = c/λ = ${ph.thz.toFixed(4)} THz<br>E = hc/λ = ${ph.eV.toFixed(6)} eV = ${ph.J.toExponential(5)} J<br>σ = 1/λ = ${ph.cm.toFixed(3)} cm⁻¹</div>`:''}`}
+function lineDetail(ref){
+ if(!ref)return `<h2>${Lg('Selected line','خط انتخاب‌شده')}</h2><p class="note">${Lg('Click a spectral line in the plot.','روی یک خط طیفی در نمودار کلیک کنید.')}</p>`;
+ const ds=dsById(ref.id),ln=ds.lines[ref.i],ph=photon(ln.vac),reg=regionOf(ln.vac);
+ const RN={xray:Lg('X-ray / EUV (not visible)','پرتو X / فرابنفش دور (نامرئی)'),uv:Lg('Ultraviolet (not visible)','فرابنفش (نامرئی)'),vis:Lg('Visible','مرئی'),ir:Lg('Infrared (not visible)','فروسرخ (نامرئی)')}[reg];
+ const rgb=wl2rgb(ln.vac);
+ return `<h2>${ds.label} — ${nistWl(ln.vac).toFixed(4)} nm ${rgb?`<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgb(${rgb});vertical-align:middle"></span>`:''}</h2>
+ <dl class="kv"><dt>${Lg('Species','گونه')}</dt><dd>${ds.label} (${ds.sub})</dd>
+ <dt>λ vacuum</dt><dd>${ln.vac.toFixed(5)} nm</dd><dt>λ ${Lg('NIST-style (air 200–2000 nm)','به سبک NIST (هوا ۲۰۰–۲۰۰۰)')}</dt><dd>${nistWl(ln.vac).toFixed(5)} nm</dd>
+ <dt>ν</dt><dd>${ph.thz.toFixed(5)} THz</dd><dt>E</dt><dd>${ph.eV.toFixed(6)} eV</dd><dt>σ</dt><dd>${ph.cm.toFixed(3)} cm⁻¹</dd><dt>${Lg('Region','ناحیه')}</dt><dd>${RN}</dd>
+ <dt>${Lg('Upper level','تراز بالا')}</dt><dd>${[ln.up.conf,ln.up.term,ln.up.J].filter(Boolean).join(' ')||'—'}${ln.up.E!=null?` (${ln.up.E.toFixed(3)} cm⁻¹)`:''}</dd>
+ <dt>${Lg('Lower level','تراز پایین')}</dt><dd>${[ln.lo.conf,ln.lo.term,ln.lo.J].filter(Boolean).join(' ')||'—'}${ln.lo.E!=null?` (${ln.lo.E.toFixed(3)} cm⁻¹)`:''}</dd>
+ ${ln.up.E!=null&&ln.lo.E!=null?`<dt>ΔE (${Lg('levels','ترازها')})</dt><dd>${(ln.up.E-ln.lo.E).toFixed(3)} cm⁻¹ = ${((ln.up.E-ln.lo.E)*PC.eV_per_cm).toFixed(6)} eV</dd>`:''}
+ <dt>${Lg('Transition','گذار')}</dt><dd>${ln.series?ln.series+' '+ln.meta.nu+'→'+ln.meta.nl:ln.type}${ln.note?' · '+ln.note:''}</dd>
+ <dt>${Lg('Intensity','شدت')}</dt><dd>${ln.intens!=null?ln.intens+' ('+Lg('arbitrary units, source-specific','واحد دلخواه')+')':Lg('not provided by this dataset','در این مجموعه داده موجود نیست')}</dd>
+ ${ln.aki!=null?`<dt>A<sub>ki</sub></dt><dd>${ln.aki.toExponential(3)} s⁻¹</dd>`:''}${ln.src?`<dt>${Lg('Wavelength basis','مبنای طول موج')}</dt><dd>${ln.src==='obs'?Lg('observed','مشاهده‌شده'):ln.src==='ritz'?Lg('Ritz (calculated from levels)','ریتز (محاسبه از ترازها)'):'wavenumber'}</dd>`:''}
+ <dt>${Lg('Data type','نوع داده')}</dt><dd>${Lg(...KIND[ds.kind])}</dd></dl>
+ <div class="row"><button class="ld-lv">${Lg('Show in energy-level diagram','نمایش در نمودار ترازها')}</button></div>`;
+}
+function wireLineDetail(root){const b=root.querySelector('.ld-lv');if(b)b.onclick=()=>{const ds=dsById(LS.id),ln=ds.lines[LS.i],m=levelModel(ds);if(!m)return;LV.dsId=ds.id;
+  if(ds.hydrogenic){LV.up=m.lv.findIndex(l=>l.n===ln.meta.nu&&l.l===1);LV.lo=m.lv.findIndex(l=>l.n===ln.meta.nl&&l.l===0)}
+  else{const f=s=>s.E!=null?m.lv.findIndex(l=>Math.abs(l.E-s.E)<.01&&l.conf===s.conf):-1;LV.up=f(ln.up);LV.lo=f(ln.lo);if(LV.up<0)LV.up=null;if(LV.lo<0)LV.lo=null}
+  LV.next='up';dirty.add('levels');showTab('levels')}}
+function selectLine(ref){LS=ref;paintLineViews();[SPV,SCV,LVS].forEach(v=>v&&v.draw())}
+function paintLineViews(){$('#sp-line').innerHTML=lineDetail(LS);wireLineDetail($('#sp-line'));$('#sc-line').innerHTML=lineDetail(LS);wireLineDetail($('#sc-line'));
+ const ds=LS&&dsById(LS.id);$('#sp-eq').innerHTML=eqHTML(ds?photon(ds.lines[LS.i].vac):null)}
+
+// ============ EMISSION SPECTRUM LAB ============
+let SPV=null,SCV=null,LVS=null;
+function spDefault(){const z=S.sel,a=datasetsFor(z);const ne=a.find(d=>!d.hydrogenic);SP.dsId=ne?ne.id:(z===1?'hyd-1':null);if(SP.dsId&&dsById(SP.dsId).hydrogenic&&z!==1)SP.dsId=null;LS=null;hiSet=null;SP.series=null}
+function spCurrent(){return SP.dsId?dsById(SP.dsId):null}
+function renderSpectrum(){
+ hiSet=null;
+ if(!SPV)SPV=new SpecView($('#sp-cv'),{tracks:()=>{const d=spCurrent();return d?[{ds:d,color:'#4cc2f0'}]:[]},colorByWl:true,onSelect:selectLine});
+ const z=S.sel,e=EL[z-1],a=datasetsFor(z),cur=spCurrent();
+ $('#sp-ctl').innerHTML=`<div class="row"><span class="note">${Lg('Species / dataset','گونه / مجموعه داده')}</span><select id="sp-ds"><option value="" ${cur?'':'selected'}>— ${Lg('none loaded','هیچ‌کدام')} —</option>${a.map(d=>`<option value="${d.id}" ${cur&&cur.id===d.id?'selected':''}>${d.label} · ${d.sub} · ${Lg(...KIND[d.kind])}</option>`).join('')}</select></div>
+ <div class="row"><span class="note">${Lg('Axis','محور')}</span>${[['nm','λ nm'],['thz','ν THz'],['ev','E eV']].map(u=>`<button data-u="${u[0]}" aria-pressed="${SPV.unit===u[0]}">${u[1]}</button>`).join('')}
+ <select id="sp-med"><option value="nist" ${SPV.medium==='nist'?'selected':''}>${Lg('λ: NIST convention (air/vacuum)','λ: قرارداد NIST (هوا/خلأ)')}</option><option value="vac" ${SPV.medium==='vac'?'selected':''}>${Lg('λ: all vacuum','λ: همه در خلأ')}</option></select></div>
+ <div class="row"><span class="note">${Lg('Range','بازه')}</span>${[['xray','EUV/X'],['uv','UV'],['vis',Lg('Visible','مرئی')],['ir','IR'],['all',Lg('All','همه')]].map(r=>`<button data-r="${r[0]}">${r[1]}</button>`).join('')}<button id="sp-zi">＋</button><button id="sp-zo">−</button></div>`;
+ $('#sp-ds').onchange=e=>{SP.dsId=e.target.value||null;LS=null;hiSet=null;SP.series=null;renderSpectrum()};
+ $$('#sp-ctl [data-u]').forEach(b=>b.onclick=()=>{SPV.setUnit(b.dataset.u);renderSpectrum()});
+ $('#sp-med').onchange=e=>{SPV.medium=e.target.value;SPV.draw()};
+ $$('#sp-ctl [data-r]').forEach(b=>b.onclick=()=>{const r=PRESET[b.dataset.r];SPV.setNm(r[0],r[1])});$('#sp-zi').onclick=()=>SPV.zoom(.6);$('#sp-zo').onclick=()=>SPV.zoom(1.7);
+ $('#sp-note').innerHTML=cur?(cur.lines.some(l=>l.intens>0)?'':Lg('This dataset provides no line intensities; all lines are drawn at equal height. ','این مجموعه داده شدت خط ندارد؛ همه خطوط با ارتفاع یکسان رسم شده‌اند. '))+Lg('UV/IR lines are drawn dashed grey because they are not visible; only 380–750 nm lines use colour (CIE-based mapping, approximate on a screen). Drag = pan, wheel/pinch = zoom, click = select.','خطوط UV/IR چون نامرئی‌اند خاکستری خط‌چین هستند؛ فقط خطوط ۳۸۰–۷۵۰ nm رنگی‌اند (نگاشت بر پایه CIE، روی نمایشگر تقریبی). کشیدن = جابه‌جایی، چرخ/دو انگشت = زوم، کلیک = انتخاب.'):
+  `<b>${Lg(`No experimental line dataset for ${e.sym} is loaded.`,`مجموعه داده خطوط تجربی برای ${e.sym} بارگذاری نشده است.`)}</b> ${Lg('Nothing is invented: import a NIST ASD lines export below to get its real spectrum, or pick the hydrogen-like ion (theory) in the list above.','چیزی حدس زده نمی‌شود: یک خروجی خطوط NIST ASD را در پایین وارد کنید یا یون هیدروژن‌گونه (نظری) را از فهرست انتخاب کنید.')}`;
+ if(cur){const lines=cur.lines.map(l=>l.vac);if(!SP._fit||SP._fit!==cur.id){SP._fit=cur.id;const vis=lines.filter(v=>v>=380&&v<=750);if(vis.length)SPV.setNm(380,750);else{const lo=Math.min(...lines),hi=Math.max(...lines);SPV.setNm(lo*.9,hi*1.1)}}}
+ hydSeries();impPanel();srcPanel();paintLineViews();SPV.draw();
+}
+function srcPanel(){const d=spCurrent();
+ $('#sp-src').innerHTML=`<h2>${Lg('Data source','منبع داده')}</h2>${d?`<dl class="kv"><dt>${Lg('Dataset','مجموعه')}</dt><dd>${d.label} — ${d.sub}</dd><dt>${Lg('Type','نوع')}</dt><dd><b>${Lg(...KIND[d.kind])}</b></dd><dt>${Lg('Lines','خطوط')}</dt><dd>${d.lines.length}</dd><dt>${Lg('Source','منبع')}</dt><dd>${d.source}</dd><dt>${Lg('Wavelength medium','محیط طول موج')}</dt><dd>${d.medium}</dd></dl>`:`<p class="note">${Lg('No dataset selected.','مجموعه‌ای انتخاب نشده.')}</p>`}
+ <p class="note">${Lg('Constants: CODATA 2018 / SI 2019. Air–vacuum conversion: Edlén (1966). Primary reference for observed lines: NIST Atomic Spectra Database (physics.nist.gov/asd) — available here through the import tool.','ثابت‌ها: CODATA 2018 / SI 2019. تبدیل هوا–خلأ: ادلن (۱۹۶۶). مرجع اصلی خطوط مشاهده‌شده: پایگاه NIST Atomic Spectra Database (physics.nist.gov/asd) که از طریق ابزار وارد کردن در دسترس است.')}</p>`;
+ $('#sp-spdf').innerHTML=`<h2>${Lg('Why “s, p, d, f”? (history)','چرا «s, p, d, f»؟ (تاریخچه)')}</h2><p>${Lg('Late-19th and early-20th-century spectroscopists classified <b>series of lines</b> in alkali spectra by their appearance: <b>sharp</b>, <b>principal</b>, <b>diffuse</b> and <b>fundamental</b> (also called Bergmann). Once quantum theory explained which electron states produce each series (those ending on l = 0, 1, 2, 3), the letters s, p, d, f were kept as names for the subshells; later letters continue alphabetically (g, h, …).','طیف‌سنجان اواخر قرن ۱۹ و اوایل قرن ۲۰ <b>رشته‌های خطی</b> طیف فلزات قلیایی را بر اساس ظاهرشان طبقه‌بندی کردند: <b>تیز (sharp)</b>، <b>اصلی (principal)</b>، <b>پخش (diffuse)</b> و <b>بنیادی (fundamental)</b>. پس از آنکه نظریه کوانتومی نشان داد هر رشته از چه حالت‌هایی می‌آید (l = 0، 1، 2، 3)، همین حروف نام زیرلایه‌ها شد و بقیه به ترتیب الفبا ادامه می‌یابند (g, h, …).')}</p>
+ <p class="note">${Lg('The letters are labels for the angular momentum quantum number l — they do <b>not</b> mean four fixed wavelength regions or four universal groups of visible lines. A given series can lie in the UV, visible or IR depending on the atom.','این حروف برچسب عدد کوانتومی تکانه زاویه‌ای l هستند — <b>نه</b> چهار ناحیه ثابت طول موج و نه چهار گروه جهانی خطوط مرئی. یک رشته بسته به اتم می‌تواند در UV، مرئی یا IR باشد.')}</p>`;
+}
+function hydSeries(){
+ const d=spCurrent(),box=$('#sp-hyd');if(!d||!d.hydrogenic){box.style.display='none';return}box.style.display='block';const z=d.z;
+ const nl=SP.series||2,rows=[];for(let nu=nl+1;nu<=nl+8;nu++)rows.push({nu,vac:hydLamVac(z,nu,nl)});const lim=hydLamVac(z,1e6,nl);
+ const idx=nu=>d.lines.findIndex(l=>l.meta.nu===nu&&l.meta.nl===nl);
+ box.innerHTML=`<h2>${Lg('Hydrogen-like series','رشته‌های هیدروژن‌گونه')} — ${d.label}</h2>
+ <div class="row">${[1,2,3,4,5].map(s=>`<button data-s="${s}" aria-pressed="${nl===s}">${SERIES[s]} (n′=${s})</button>`).join('')}</div>
+ <p class="note">${Lg(`Transitions n → ${nl}: an atom in a state with principal quantum number n drops to n′ = ${nl}. 1/λ = R·Z²(1/n′² − 1/n²). Series limit (n→∞): ${lim.toFixed(2)} nm. ${z===1&&nl===2?'The Balmer lines lie in the visible/near-UV.':''} These are changes between quantum states, not electrons travelling along orbits.`,`گذار n → ${nl}: اتمی در حالتی با عدد کوانتومی اصلی n به n′ = ${nl} می‌رود. 1/λ = R·Z²(1/n′² − 1/n²). حد رشته (n→∞): ${lim.toFixed(2)} nm. این‌ها تغییر بین حالت‌های کوانتومی‌اند، نه حرکت الکترون روی مدار.`)}</p>
+ <div class="scroll"><table class="cmp"><tr><th>n→n′</th><th>λ vac (nm)</th><th>λ NIST-style (nm)</th><th>E (eV)</th><th>ν (THz)</th><th>${Lg('region','ناحیه')}</th></tr>
+ ${rows.map(r=>{const ph=photon(r.vac),reg=regionOf(r.vac);return `<tr class="ck" data-nu="${r.nu}"><td>${r.nu}→${nl}</td><td>${r.vac.toFixed(4)}</td><td>${nistWl(r.vac).toFixed(4)}</td><td>${ph.eV.toFixed(4)}</td><td>${ph.thz.toFixed(2)}</td><td>${{xray:'X',uv:'UV',vis:Lg('visible','مرئی'),ir:'IR'}[reg]}</td></tr>`}).join('')}</table></div>
+ <div class="row"><button id="hy-show">${Lg('Zoom to this series & highlight','نمایش و برجسته‌سازی این رشته')}</button></div>
+ ${z===1?`<h2 style="margin-top:12px">${Lg('Calculated vs reference values','محاسبه در برابر مقادیر مرجع')}</h2><div class="scroll"><table class="cmp"><tr><th>${Lg('line','خط')}</th><th>${Lg('computed','محاسبه')}</th><th>${Lg('reference','مرجع')}</th><th>Δ (nm)</th></tr>
+ ${H_REF.map(r=>{const v=hydLamVac(1,r.nu,r.nl),c=r.med==='air'?vacToAir(v):v;return `<tr><td>${r.name} (${r.nu}→${r.nl})</td><td>${c.toFixed(3)} ${r.med}</td><td>${r.val} ${r.med}</td><td>${(c-r.val).toFixed(3)}</td></tr>`}).join('')}</table></div>
+ <p class="note">${Lg('Reference column = widely quoted rounded literature values (not a NIST export). Small differences come from rounding of the reference and from fine structure/QED effects neglected in the simple Rydberg model.','ستون مرجع = مقادیر گردشده رایج در ادبیات (نه خروجی NIST). اختلاف‌های کوچک از گرد کردن مرجع و اثرات ساختار ریز/QED است که در مدل ساده ریدبرگ نادیده گرفته شده.')}</p>`:''}`;
+ $$('#sp-hyd [data-s]').forEach(b=>b.onclick=()=>{SP.series=+b.dataset.s;hiSet=null;hydSeries()});
+ $$('#sp-hyd tr.ck').forEach(r=>r.onclick=()=>{const i=idx(+r.dataset.nu);const l=d.lines[i];SPV.setNm(l.vac*.97,l.vac*1.03);selectLine({id:d.id,i})});
+ $('#hy-show').onclick=()=>{hiSet=new Set(d.lines.map((l,i)=>l.meta.nl===nl?d.id+':'+i:null).filter(Boolean));const vs=d.lines.filter(l=>l.meta.nl===nl).map(l=>l.vac);SPV.setNm(Math.min(...vs)*.95,Math.max(...vs)*1.05);SPV.draw()};
+}
+function impPanel(){
+ $('#sp-imp').innerHTML=`<h2>${Lg('Import real NIST ASD data (Fe, Cu, Ne, Ar, …)','وارد کردن داده واقعی NIST ASD (Fe، Cu، Ne، Ar، …)')}</h2>
+ <p class="note">${Lg('This app contains no invented spectra. To load the observed spectrum of any species: open NIST ASD “Lines” (physics.nist.gov/asd), choose the spectrum (e.g. Fe I), set output format to Tab-delimited or CSV, tick observed wavelength, Ritz wavelength, intensity, transition probability and level information (configuration, term, J, energies), then download the text and load it here (file or paste). Lines are grouped by species (element + ion stage) and appear in the dataset list. Parser tested only on a synthetic sample of the documented column layout.','این برنامه هیچ طیف ساختگی ندارد. برای بارگذاری طیف مشاهده‌ای هر گونه: در NIST ASD بخش «Lines» (physics.nist.gov/asd) گونه را انتخاب کنید (مثلاً Fe I)، قالب خروجی را Tab-delimited یا CSV بگذارید، طول موج مشاهده‌ای، ریتز، شدت، احتمال گذار و اطلاعات ترازها (آرایش، جمله، J، انرژی) را فعال کنید، متن را دانلود و اینجا بارگذاری یا paste کنید. خطوط بر اساس گونه (عنصر + مرحله یونش) گروه‌بندی می‌شوند. تجزیه‌گر فقط روی نمونه ساختگی با ساختار مستند ستون‌ها آزموده شده است.')}</p>
+ <div class="row"><input type="file" id="imp-f" accept=".txt,.csv,.tsv,.tab"><button id="imp-go">${Lg('Import pasted text','وارد کردن متن paste‌شده')}</button></div>
+ <textarea id="imp-t" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:6px;font-family:monospace;font-size:12px" placeholder="element	sp_num	obs_wl_air(nm)	…"></textarea><div id="imp-msg" class="note"></div>`;
+ const run=t=>{const r=parseNist(t);if(r.error){$('#imp-msg').innerHTML=`<span class="fail">${r.error}</span>`;return}
+  r.datasets.forEach(d=>{DSR.imported=DSR.imported.filter(x=>x.id!==d.id);DSR.imported.push(d)});
+  $('#imp-msg').innerHTML=`<span class="pass">${Lg('Imported','وارد شد')} ${r.used} ${Lg('lines','خط')}</span> (${r.skipped} ${Lg('skipped','ردشده')}) → ${r.datasets.map(d=>d.label+' ('+d.lines.length+')').join(', ')} · ${Lg('columns','ستون‌ها')}: ${r.columns.join(', ')}`;
+  const first=r.datasets.find(d=>d.z===S.sel)||r.datasets[0];if(first){if(first.z&&first.z!==S.sel){select(first.z)}SP.dsId=first.id;SP._fit=null;LS=null;renderSpectrum();$('#imp-msg').innerHTML=`<span class="pass">${Lg('Imported','وارد شد')} ${r.used} ${Lg('lines','خط')}</span> → ${r.datasets.map(d=>d.label+' ('+d.lines.length+')').join(', ')}`}};
+ $('#imp-f').onchange=async e=>{const f=e.target.files[0];if(f)run(await f.text())};$('#imp-go').onclick=()=>run($('#imp-t').value);
+}
+
+// ============ ENERGY LEVELS + TRANSITIONS ============
+const LV={dsId:null,up:null,lo:null,next:'up',all:false,t0:0,playing:false};
+function levelModel(ds){
+ if(!ds)return null;
+ if(ds.hydrogenic)return{lv:ds.levels.map(l=>({...l,eV:l.E*PC.eV_per_cm,col:l.l,colName:'spdf'[l.l]})),limit:ds.limit,cols:['s','p','d','f']};
+ if(ds.levels&&ds.levels.length){const cols=[],ord='SPDFGHIKLMNO?';const lv=ds.levels.map(l=>{const t=parseTerm(l.term),c=t?'SPDFGHIKLMNO'[t.L]:'?';if(!cols.includes(c))cols.push(c);return{...l,eV:l.E*PC.eV_per_cm,colName:c,odd:t?t.odd:null}});
+  cols.sort((a,b)=>ord.indexOf(a)-ord.indexOf(b));lv.forEach(l=>l.col=cols.indexOf(l.colName));return{lv,limit:ds.limit,cols}}
+ return null;
+}
+let lvHits=[];
+function lvDefault(){const a=datasetsFor(S.sel).filter(d=>levelModel(d));const pick=a.find(d=>!d.hydrogenic)||a[0];LV.dsId=pick?pick.id:null;LV.up=LV.lo=null;LV.next='up'}
+function lvTrans(){
+ const ds=dsById(LV.dsId),m=levelModel(ds);if(!m||LV.up==null||LV.lo==null)return null;const u=m.lv[LV.up],l=m.lv[LV.lo],dE=u.E-l.E,res={u,l,dE};
+ if(dE<=0){res.err=Lg('Upper level must have higher energy than the lower level for emission.','برای نشر، تراز بالا باید انرژی بیشتری از تراز پایین داشته باشد.');if(dE===0)res.err=Lg('Equal energies: no photon is emitted (levels are degenerate in this model).','انرژی برابر: فوتونی نشر نمی‌شود (در این مدل ترازها واگن‌اند).');return res}
+ const vac=1e7/dE;res.ph=photon(vac);res.rule=ds.hydrogenic?hE1(u.l,l.l):e1Check(l,u);
+ res.li=ds.lines.findIndex(x=>x.up.E!=null&&x.lo.E!=null&&Math.abs((x.up.E-x.lo.E)-dE)<(ds.hydrogenic?.05:.6));
+ return res;
+}
+function renderLevels(){
+ const z=S.sel,a=datasetsFor(z).filter(d=>levelModel(d));if(!dsById(LV.dsId)||dsById(LV.dsId).z!==z)lvDefault();
+ const ds=dsById(LV.dsId),m=levelModel(ds);
+ $('#lv-ctl').innerHTML=`<div class="row"><span class="note">${Lg('Species','گونه')}</span><select id="lv-ds">${a.length?a.map(d=>`<option value="${d.id}" ${d.id===LV.dsId?'selected':''}>${d.label} · ${d.sub}</option>`).join(''):`<option>— ${Lg('no level data','داده تراز موجود نیست')} —</option>`}</select>
+ <span class="note">${Lg('Next click sets:','کلیک بعدی تعیین می‌کند:')}</span><button data-nx="up" aria-pressed="${LV.next==='up'}">${Lg('upper level','تراز بالا')}</button><button data-nx="lo" aria-pressed="${LV.next==='lo'}">${Lg('lower level','تراز پایین')}</button>
+ ${ds&&ds.hydrogenic?`<label><input type="checkbox" id="lv-all" ${LV.all?'checked':''}> ${Lg('show all E1-allowed transitions (n ≤ 5)','نمایش همه گذارهای مجاز E1 (n ≤ 5)')}</label>`:''}</div>
+ ${(z>1&&ds&&ds.hydrogenic)?`<div class="warn">${Lg(`No neutral-atom or low-ion level data for ${EL[z-1].sym} are loaded (nothing is guessed). Showing the hydrogen-like ion ${ds.label} (theory). Import a NIST ASD lines export on the Emission Spectrum page for real levels.`,`داده ترازهای اتم خنثی یا یون‌های کم‌بار ${EL[z-1].sym} بارگذاری نشده (چیزی حدس زده نمی‌شود). یون هیدروژن‌گونه ${ds.label} (نظری) نمایش داده شده است. برای ترازهای واقعی یک خروجی NIST ASD را در صفحه طیف نشری وارد کنید.`)}</div>`:''}
+ ${!m?`<div class="warn">${Lg(`No energy-level data are loaded for ${EL[z-1].sym}. Level energies are not guessed. Import a NIST ASD lines export (it contains upper/lower level energies) on the Emission Spectrum page, or choose the hydrogen-like ion.`,`داده ترازهای انرژی برای ${EL[z-1].sym} بارگذاری نشده و حدس زده نمی‌شود. یک خروجی خطوط NIST ASD (حاوی انرژی ترازها) را در صفحه طیف نشری وارد کنید یا یون هیدروژن‌گونه را انتخاب کنید.`)}</div>`:''}
+ <p class="note">${Lg('Distinguish: <b>orbital energy</b> (one-electron approximation), <b>atomic energy level</b> (energy of the whole atom in a given state, what the diagram shows, measured from the ground state), <b>ionization energy</b> (dashed limit) and <b>photon energy</b> (difference of two atomic levels). Subshell ordering is not universal; the diagram uses data, not a filling rule.','تفاوت: <b>انرژی اوربیتال</b> (تقریب تک‌الکترونی)، <b>تراز انرژی اتمی</b> (انرژی کل اتم در یک حالت؛ آنچه نمودار نشان می‌دهد، از حالت پایه)، <b>انرژی یونش</b> (حد خط‌چین) و <b>انرژی فوتون</b> (اختلاف دو تراز اتمی). ترتیب زیرلایه‌ها جهانی نیست؛ نمودار از داده استفاده می‌کند نه قاعده پر شدن.')}</p>`;
+ $('#lv-ds')&&($('#lv-ds').onchange=e=>{LV.dsId=e.target.value;LV.up=LV.lo=null;renderLevels()});
+ $$('#lv-ctl [data-nx]').forEach(b=>b.onclick=()=>{LV.next=b.dataset.nx;renderLevels()});const al=$('#lv-all');if(al)al.onchange=e=>{LV.all=e.target.checked;drawLevels()};
+ $('#lv-animH').textContent=Lg('Transition animation','انیمیشن گذار');$('#lv-specH').textContent=Lg('Corresponding spectral line','خط طیفی متناظر');$('#lv-play').textContent=Lg('Play transition','پخش گذار');
+ $('#lv-play').onclick=()=>{LV.t0=performance.now();LV.playing=true};
+ if(!LVS)LVS=new SpecView($('#lv-spec'),{tracks:()=>{const d=dsById(LV.dsId);return d?[{ds:d,color:'#4cc2f0'}]:[]},colorByWl:true,onSelect:r=>selectLine(r)});
+ lvResult();drawLevels();
+ if(ds){const t=lvTrans(),lines=ds.lines.map(l=>l.vac);hiSet=t&&t.li>=0?new Set([ds.id+':'+t.li]):null;if(LVS._ds!==ds.id){LVS._ds=ds.id;const lo=Math.min(...lines),hi=Math.max(...lines);const vis=lines.filter(v=>v>=380&&v<=750);vis.length?LVS.setNm(380,750):LVS.setNm(lo*.9,hi*1.1)}LVS.draw()}
+}
+function lvResult(){
+ const ds=dsById(LV.dsId),t=lvTrans(),box=$('#lv-res');
+ if(!ds||!levelModel(ds)){box.innerHTML='';return}
+ const m=levelModel(ds),nm=i=>i==null?'—':m.lv[i].label;
+ let h=`<h2>${Lg('Transition calculator','ماشین‌حساب گذار')}</h2><dl class="kv"><dt>${Lg('Upper level','تراز بالا')}</dt><dd>${nm(LV.up)}${LV.up!=null?` — ${m.lv[LV.up].E.toFixed(3)} cm⁻¹ = ${m.lv[LV.up].eV.toFixed(5)} eV`:''}</dd><dt>${Lg('Lower level','تراز پایین')}</dt><dd>${nm(LV.lo)}${LV.lo!=null?` — ${m.lv[LV.lo].E.toFixed(3)} cm⁻¹ = ${m.lv[LV.lo].eV.toFixed(5)} eV`:''}</dd></dl>`;
+ if(!t)h+=`<p class="note">${Lg('Click two levels in the diagram.','روی دو تراز در نمودار کلیک کنید.')}</p>`;
+ else if(t.err)h+=`<div class="warn">${t.err}</div>`;
+ else{const ph=t.ph,V={allowed:['pass',Lg('Allowed (E1)','مجاز (E1)')],forbidden:['fail',Lg('E1-forbidden','ممنوع در E1')],unlikely:['fail',Lg('Strongly suppressed (intercombination)','به‌شدت ضعیف (بین‌چندگانگی)')],unknown:['note',Lg('Cannot be decided from the data','با داده موجود قابل تعیین نیست')]}[t.rule.verdict];
+  h+=`<dl class="kv"><dt>ΔE = E<sub>up</sub> − E<sub>low</sub></dt><dd><b>${t.dE.toFixed(3)} cm⁻¹</b> = ${(t.dE*PC.eV_per_cm).toFixed(6)} eV = ${ph.J.toExponential(5)} J</dd><dt>λ = hc/ΔE (${Lg('vacuum','خلأ')})</dt><dd><b>${ph.nm.toFixed(5)} nm</b></dd><dt>λ (${Lg('NIST-style','سبک NIST')})</dt><dd>${nistWl(ph.nm).toFixed(5)} nm</dd><dt>ν = ΔE/h</dt><dd>${ph.thz.toFixed(5)} THz</dd><dt>${Lg('Region','ناحیه')}</dt><dd>${{xray:'X-ray/EUV',uv:'UV',vis:Lg('visible','مرئی'),ir:'IR'}[regionOf(ph.nm)]}</dd>
+  <dt>${Lg('Selection rules','قواعد گزینش')}</dt><dd><span class="${V[0]}"><b>${V[1]}</b></span><br><span class="note">${t.rule.notes.join(' · ')}</span></dd>
+  <dt>${Lg('Observed/catalogued line','خط مشاهده‌شده/فهرست‌شده')}</dt><dd>${t.li>=0?`${Lg('yes','بله')} — ${nistWl(ds.lines[t.li].vac).toFixed(4)} nm ${ds.lines[t.li].series?'('+ds.lines[t.li].series+')':''}`:Lg('none in this dataset (value is a calculation only)','در این مجموعه نیست (فقط محاسبه)')}</dd></dl>
+  ${t.rule.verdict==='forbidden'?`<p class="note">${Lg('Forbidden for electric-dipole emission; such a level pair does not give an ordinary spectral line (weak magnetic-dipole/quadrupole lines may exist).','برای نشر دوقطبی الکتریکی ممنوع است؛ چنین جفت‌ترازی خط طیفی معمولی نمی‌دهد (خطوط ضعیف دوقطبی مغناطیسی/چهارقطبی ممکن است وجود داشته باشد).')}</p>`:''}
+  ${ds.hydrogenic?`<p class="note">${Lg('Hydrogen-like model: energies depend on n only; fine structure, Lamb shift ignored. Not valid for multi-electron atoms.','مدل هیدروژن‌گونه: انرژی فقط به n بستگی دارد؛ ساختار ریز و جابجایی لمب نادیده گرفته شده. برای اتم‌های چندالکترونی معتبر نیست.')}</p>`:''}`}
+ box.innerHTML=h;
+ const animOK=t&&!t.err&&t.rule.verdict==='allowed';$('#lv-play').disabled=!animOK;
+ $('#lv-animNote').textContent=animOK?Lg('Schematic: the atom’s charge distribution changes from the upper to the lower state while one photon is emitted (not to scale; no electron path).','شماتیک: توزیع بار اتم از حالت بالا به پایین تغییر می‌کند و یک فوتون نشر می‌شود (بدون مقیاس؛ بدون مسیر الکترون).'):Lg('Animation is available only for allowed (E1) emission transitions.','انیمیشن فقط برای گذارهای نشری مجاز (E1) در دسترس است.');
+ if(animOK&&!LV.playing){LV.t0=performance.now();LV.playing=true}
+}
+function drawLevels(){
+ const cv=$('#lv-cv'),ds=dsById(LV.dsId),m=levelModel(ds);const W=cv.clientWidth,H=cv.clientHeight,dpr=devicePixelRatio||1;if(!W||!H)return;cv.width=W*dpr;cv.height=H*dpr;const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+ const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),mut=cs.getPropertyValue('--muted').trim(),line=cs.getPropertyValue('--line').trim();lvHits=[];
+ if(!m){x.fillStyle=mut;x.font='13px sans-serif';x.textAlign='center';x.fillText(Lg('No level data for this selection','داده تراز برای این انتخاب موجود نیست'),W/2,H/2);return}
+ const pl=58,pr=10,pt=18,pb=26,ph=H-pt-pb,eMax=(m.limit?m.limit*PC.eV_per_cm:Math.max(...m.lv.map(l=>l.eV)))*1.04,Y=e=>pt+ph-(e/eMax)*ph,cw=(W-pl-pr)/m.cols.length;
+ x.strokeStyle=line;x.fillStyle=mut;x.font='11px sans-serif';x.textAlign='right';
+ const st=(()=>{const raw=eMax/6,p=Math.pow(10,Math.floor(Math.log10(raw))),mm=raw/p;return(mm<1.5?1:mm<3.5?2:mm<7.5?5:10)*p})();
+ for(let t=0;t<=eMax;t+=st){const y=Y(t);x.globalAlpha=.4;x.beginPath();x.moveTo(pl,y);x.lineTo(W-pr,y);x.stroke();x.globalAlpha=1;x.fillText(+t.toPrecision(4),pl-5,y+4)}
+ x.save();x.translate(12,pt+ph/2);x.rotate(-Math.PI/2);x.textAlign='center';x.fillText('E (eV) '+Lg('above ground state','بالاتر از حالت پایه'),0,0);x.restore();
+ m.cols.forEach((c,i)=>{x.textAlign='center';x.fillStyle=mut;x.fillText(c+(ds.hydrogenic?'':'  ('+Lg('term L','L جمله')+')'),pl+(i+.5)*cw,H-8)});
+ if(m.limit){const y=Y(m.limit*PC.eV_per_cm);x.setLineDash([5,4]);x.strokeStyle=ink;x.beginPath();x.moveTo(pl,y);x.lineTo(W-pr,y);x.stroke();x.setLineDash([]);x.fillStyle=ink;x.textAlign='left';x.fillText(Lg('ionization limit','حد یونش')+' '+(m.limit*PC.eV_per_cm).toFixed(3)+' eV',pl+4,y-4)}
+ const pos=i=>{const l=m.lv[i],cx=pl+(l.col+.5)*cw,w=cw*.56;return{x0:cx-w/2,x1:cx+w/2,y:Y(l.eV)}};
+ if(ds.hydrogenic&&LV.all){x.globalAlpha=.18;x.strokeStyle=ink;m.lv.forEach((u,iu)=>m.lv.forEach((l,il)=>{if(u.n<=5&&l.n<u.n&&Math.abs(u.l-l.l)===1&&u.l<=3&&l.l<=3){const a=pos(iu),b=pos(il);x.beginPath();x.moveTo((a.x0+a.x1)/2,a.y);x.lineTo((b.x0+b.x1)/2,b.y);x.stroke()}}));x.globalAlpha=1}
+ else if(!ds.hydrogenic){x.globalAlpha=.4;x.strokeStyle=ink;ds.lines.forEach(ln=>{const iu=m.lv.findIndex(l=>l.E===ln.up.E&&l.conf===ln.up.conf),il=m.lv.findIndex(l=>l.E===ln.lo.E&&l.conf===ln.lo.conf);if(iu<0||il<0)return;const a=pos(iu),b=pos(il);x.beginPath();x.moveTo((a.x0+a.x1)/2,a.y);x.lineTo((b.x0+b.x1)/2,b.y);x.stroke()});x.globalAlpha=1}
+ m.lv.forEach((l,i)=>{if(ds.hydrogenic&&l.n>8)return;const p=pos(i),sel=i===LV.up?'#f59e0b':i===LV.lo?'#22c1d6':null;x.strokeStyle=sel||ink;x.lineWidth=sel?4:2.2;x.beginPath();x.moveTo(p.x0,p.y);x.lineTo(p.x1,p.y);x.stroke();x.lineWidth=1;
+  x.fillStyle=sel||mut;x.font='10px sans-serif';x.textAlign='left';if(!(ds.hydrogenic&&l.n>5&&i!==LV.up&&i!==LV.lo))x.fillText(ds.hydrogenic?l.label:l.label.replace(/\s+/g,' '),p.x1+3,p.y+3);lvHits.push({i,x0:p.x0,x1:p.x1,y:p.y})});
+ const t=lvTrans();if(t&&!t.err){const a=pos(LV.up),b=pos(LV.lo),rgb=wl2rgb(t.ph.nm);x.strokeStyle=rgb?`rgb(${rgb})`:ink;x.lineWidth=2.5;x.beginPath();x.moveTo((a.x0+a.x1)/2,a.y);x.lineTo((b.x0+b.x1)/2,b.y);x.stroke();x.lineWidth=1;
+  const ex=(b.x0+b.x1)/2,ey=b.y;x.fillStyle=rgb?`rgb(${rgb})`:ink;x.beginPath();x.moveTo(ex,ey);x.lineTo(ex-5,ey-9);x.lineTo(ex+5,ey-9);x.fill()}
+}
+$('#lv-cv').addEventListener('pointerdown',e=>{const r=e.target.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=10;lvHits.forEach(h=>{if(px>=h.x0-12&&px<=h.x1+40){const d=Math.abs(py-h.y);if(d<bd){bd=d;best=h}}});if(!best)return;
+ if(LV.next==='up'){LV.up=best.i;LV.next='lo'}else{LV.lo=best.i;LV.next='up'}LV.playing=false;renderLevels()});
+// animation canvas
+const denCache={};
+function denCanvas(n,l,R){const key=[n,l,R].join();if(denCache[key])return denCache[key];const k0=l===1?2:0,M=120,c=document.createElement('canvas');c.width=c.height=M;const x=c.getContext('2d'),im=x.createImageData(M,M);let mx=0;const v=new Float32Array(M*M);
+ for(let j=0;j<M;j++)for(let i=0;i<M;i++){const px=-R+2*R*(i+.5)/M,pz=R-2*R*(j+.5)/M,p=psi(n,l,k0,px,0,pz);v[j*M+i]=p*p;mx=Math.max(mx,p*p)}
+ for(let q=0;q<M*M;q++){const a=Math.pow(v[q]/mx,.45);im.data[4*q]=90;im.data[4*q+1]=200;im.data[4*q+2]=255;im.data[4*q+3]=Math.round(255*a)}x.putImageData(im,0,0);return(denCache[key]=c)}
+function animLoop(){
+ requestAnimationFrame(animLoop);const cv=$('#lv-anim');if(!cv||cv.offsetParent===null)return;const W=cv.clientWidth,H=cv.clientHeight,dpr=devicePixelRatio||1;if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+ const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),mut=cs.getPropertyValue('--muted').trim();
+ const t=lvTrans(),ds=dsById(LV.dsId);if(!t||t.err||t.rule.verdict!=='allowed'){x.fillStyle=mut;x.font='13px sans-serif';x.textAlign='center';x.fillText(Lg('Select an allowed transition (upper and lower level) to animate it.','یک گذار مجاز (تراز بالا و پایین) انتخاب کنید.'),W/2,H/2);return}
+ const T=(performance.now()-LV.t0)/1000,loop=T%7,s=Math.max(0,Math.min(1,(loop-1.2)/1.6)),sm=s*s*(3-2*s),cx=W*.38,cy=H/2,sz=Math.min(H-20,150);
+ // energy ladder
+ const lx=14,lw=70,yU=24,yL=H-30;x.strokeStyle=mut;x.lineWidth=1;[[yU,t.u,1-sm],[yL,t.l,sm]].forEach(([y,l,w])=>{x.strokeStyle=ink;x.lineWidth=3;x.beginPath();x.moveTo(lx,y);x.lineTo(lx+lw,y);x.stroke();x.lineWidth=1;x.fillStyle=`rgba(255,190,60,${.15+.85*w})`;x.fillRect(lx,y-4,lw*w,8);x.fillStyle=ink;x.font='11px sans-serif';x.textAlign='left';x.fillText(l.label,lx+lw+6,y+4)});
+ x.fillStyle=mut;x.font='10px sans-serif';x.fillText(Lg('state weight','وزن حالت'),lx,yU-8);
+ // atom (charge density cross-fade)
+ if(ds.hydrogenic){const R=radialExtent(Math.max(t.u.n,t.l.n),0)*.8,cu=denCanvas(t.u.n,t.u.l,R),cl=denCanvas(t.l.n,t.l.l,R);x.globalCompositeOperation='lighter';x.globalAlpha=1-sm;x.drawImage(cu,cx-sz/2,cy-sz/2,sz,sz);x.globalAlpha=sm;x.drawImage(cl,cx-sz/2,cy-sz/2,sz,sz);x.globalAlpha=1;x.globalCompositeOperation='source-over';
+  x.fillStyle=mut;x.font='10px sans-serif';x.textAlign='center';x.fillText(Lg('|ψ|² cross-section (x–z plane), cross-faded','مقطع |ψ|² (صفحه x–z)، محوشونده'),cx,cy+sz/2+10)}
+ else{const g=x.createRadialGradient(cx,cy,2,cx,cy,sz/2);g.addColorStop(0,`rgba(90,200,255,${.9-.5*sm})`);g.addColorStop(1,'rgba(90,200,255,0)');x.fillStyle=g;x.fillRect(cx-sz/2,cy-sz/2,sz,sz);x.fillStyle=mut;x.textAlign='center';x.font='10px sans-serif';x.fillText(Lg('schematic atom (no orbital data for this species)','اتم شماتیک (داده اوربیتال برای این گونه نیست)'),cx,cy+sz/2+10)}
+ // photon
+ const rgb=wl2rgb(t.ph.nm),col=rgb?`rgb(${rgb})`:mut,lam=12+40*(Math.log10(Math.max(t.ph.nm,10))-1)/3;
+ if(loop>2.3){const ph=Math.min(1,(loop-2.3)/3.4),x0=cx+sz/2+8,len=(W-x0-20)*ph,front=x0+len;x.strokeStyle=col;x.lineWidth=2.2;if(!rgb)x.setLineDash([5,3]);x.beginPath();
+  for(let px=0;px<=len;px+=1.5){const env=Math.min(1,px/40)*Math.min(1,(len-px)/20+.2),yy=cy+Math.sin(2*Math.PI*(px/lam-T*1.5))*22*env;px?x.lineTo(x0+px,yy):x.moveTo(x0,yy)}x.stroke();x.setLineDash([]);x.lineWidth=1;
+  x.fillStyle=ink;x.font='12px sans-serif';x.textAlign='right';x.fillText(`hν = ${t.ph.eV.toFixed(4)} eV · λ = ${nistWl(t.ph.nm).toFixed(2)} nm${rgb?'':' ('+Lg('invisible','نامرئی')+')'}`,W-8,H-8)}
+}
+animLoop();
+
+// ============ SPECTRUM COMPARISON ============
+const CMP={items:[],stacked:false,selZ:2,selDs:null};
+function cmpTracks(){return CMP.items.filter(i=>i.on).map(i=>({ds:dsById(i.id),color:i.color})).filter(t=>t.ds)}
+function cmpAdd(id){if(!id||CMP.items.find(i=>i.id===id))return false;if(CMP.items.length>=6)return false;const used=CMP.items.map(i=>i.color),col=PALETTE.find(c=>!used.includes(c));CMP.items.push({id,on:true,color:col});return true}
+function renderSpecCmp(){
+ hiSet=null;
+ if(!SCV)SCV=new SpecView($('#sc-cv'),{tracks:cmpTracks,colorByWl:false,stacked:false,onSelect:selectLine});
+ const ds=datasetsFor(CMP.selZ);if(!CMP.selDs||!ds.find(d=>d.id===CMP.selDs))CMP.selDs=ds[0].id;
+ $('#sc-ctl').innerHTML=`<div class="row"><span class="note">${Lg('Add spectrum','افزودن طیف')}</span><select id="sc-z">${EL.map(e=>`<option value="${e.z}" ${e.z===CMP.selZ?'selected':''}>${e.z} ${e.sym} — ${e.en}</option>`).join('')}</select>
+ <select id="sc-ds">${ds.map(d=>`<option value="${d.id}" ${d.id===CMP.selDs?'selected':''}>${d.label} · ${Lg(...KIND[d.kind])}</option>`).join('')}</select><button id="sc-add">＋ ${Lg('Add','افزودن')}</button></div>
+ <div class="row"><span class="note">${Lg('Presets','پیش‌تنظیم‌ها')}</span>${[['H','He'],['Na','H'],['Fe','Cu'],['Ne','Ar']].map(p=>`<button data-p="${p.join(',')}">${p[0]} vs ${p[1]}</button>`).join('')}<button id="sc-clr">${Lg('Clear','پاک کردن')}</button></div>
+ <div class="row"><span class="note">${Lg('Axis','محور')}</span>${[['nm','λ nm'],['thz','ν THz'],['ev','E eV']].map(u=>`<button data-u="${u[0]}" aria-pressed="${SCV.unit===u[0]}">${u[1]}</button>`).join('')}${[['uv','UV'],['vis',Lg('Visible','مرئی')],['ir','IR'],['all',Lg('All','همه')]].map(r=>`<button data-r="${r[0]}">${r[1]}</button>`).join('')}<label><input type="checkbox" id="sc-st" ${CMP.stacked?'checked':''}> ${Lg('stacked lanes','خطوط جداگانه')}</label></div><div id="sc-msg" class="note"></div>`;
+ $('#sc-z').onchange=e=>{CMP.selZ=+e.target.value;CMP.selDs=null;renderSpecCmp()};$('#sc-ds').onchange=e=>CMP.selDs=e.target.value;
+ $('#sc-add').onclick=()=>{if(!cmpAdd(CMP.selDs))$('#sc-msg').textContent=Lg('Already added or limit of 6 reached.','قبلاً افزوده شده یا به حد ۶ رسیده‌اید.');else renderSpecCmp()};
+ $('#sc-clr').onclick=()=>{CMP.items=[];renderSpecCmp()};
+ $$('#sc-ctl [data-p]').forEach(b=>b.onclick=()=>{const miss=[];b.dataset.p.split(',').forEach(sym=>{const z=EL.find(e=>e.sym===sym).z,a=datasetsFor(z),pick=a.find(d=>!d.hydrogenic)||(z===1?a[0]:null);if(pick)cmpAdd(pick.id);else miss.push(sym)});
+  renderSpecCmp();if(miss.length)$('#sc-msg').innerHTML=`<span class="fail">${Lg(`No observed-line dataset loaded for ${miss.join(', ')} — nothing invented. Import NIST ASD lines on the Emission Spectrum page; the hydrogen-like ion can be added manually from the list.`,`برای ${miss.join('، ')} مجموعه داده خطوط مشاهده‌ای بارگذاری نشده و چیزی ساخته نمی‌شود. خطوط NIST ASD را در صفحه طیف نشری وارد کنید؛ یون هیدروژن‌گونه را می‌توانید دستی از فهرست اضافه کنید.`)}</span>`});
+ $$('#sc-ctl [data-u]').forEach(b=>b.onclick=()=>{SCV.setUnit(b.dataset.u);renderSpecCmp()});$$('#sc-ctl [data-r]').forEach(b=>b.onclick=()=>{const r=PRESET[b.dataset.r];SCV.setNm(r[0],r[1])});
+ $('#sc-st').onchange=e=>{CMP.stacked=e.target.checked;SCV.o.stacked=CMP.stacked;SCV.draw()};SCV.o.stacked=CMP.stacked;
+ $('#sc-list').innerHTML=`<h2>${Lg('Spectra shown','طیف‌های نمایش‌داده‌شده')}</h2>${CMP.items.length?CMP.items.map((it,i)=>{const d=dsById(it.id),vis=d.lines.filter(l=>l.vac>=380&&l.vac<=750).length;return `<div class="row" style="margin:3px 0"><label><input type="checkbox" data-t="${i}" ${it.on?'checked':''}> <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${it.color};vertical-align:middle"></span> <b>${d.label}</b></label><span class="note" style="margin:0">${d.lines.length} ${Lg('lines','خط')} · ${vis} ${Lg('visible','مرئی')} · ${Lg(...KIND[d.kind])}</span><button data-rm="${i}" style="padding:0 7px">×</button></div>`}).join(''):`<p class="note">${Lg('Add spectra with the controls above, or use a preset.','با کنترل‌های بالا طیف اضافه کنید یا پیش‌تنظیم بزنید.')}</p>`}
+ <p class="note">${Lg('Line colours identify the species. Intensities in different datasets are not comparable (arbitrary, source-specific units; many datasets have none).','رنگ خطوط گونه را مشخص می‌کند. شدت‌ها در مجموعه‌های مختلف قابل مقایسه نیستند (واحد دلخواه؛ بسیاری از مجموعه‌ها شدت ندارند).')}</p>`;
+ $$('#sc-list [data-t]').forEach(b=>b.onchange=()=>{CMP.items[+b.dataset.t].on=b.checked;SCV.draw()});$$('#sc-list [data-rm]').forEach(b=>b.onclick=()=>{CMP.items.splice(+b.dataset.rm,1);renderSpecCmp()});
+ $('#sc-note').textContent=Lg('Drag = pan · wheel/pinch = zoom · click a line for details. Each line stays tied to its species and ionisation stage.','کشیدن = جابه‌جایی · چرخ/دو انگشت = زوم · برای جزئیات روی خط کلیک کنید. هر خط به گونه و مرحله یونش خود وابسته است.');
+ paintLineViews();SCV.draw();
+}
+
+// ============ wiring: tab hooks, sync, language, theme ============
+const RENDER={cutaway:renderCutaway,econfig:renderEconfig,orbital:renderOrbital,elorbital:renderElOrbital,levels:renderLevels,spectrum:()=>{if(!SP._init||SP._z!==S.sel){spDefault();SP._init=true;SP._z=S.sel;SP._fit=null}renderSpectrum()},speccmp:renderSpecCmp};
+const dirty=new Set(Object.keys(RENDER));
+const _showTab=showTab;
+showTab=function(k){_showTab(k);paintBars();if(RENDER[k]){if(dirty.has(k)){dirty.delete(k);RENDER[k]()}}
+ setTimeout(()=>{[cwV,ogScene&&ogScene.v,eoScene&&eoScene.v].forEach(v=>v&&v.resize());[SPV,SCV,LVS].forEach(v=>v&&v.draw());drawLevels()},30)};
+const _select=select;
+select=function(z){_select(z);Object.keys(RENDER).forEach(k=>{if(k!=='orbital')dirty.add(k)});if(S.tab!=='table'&&RENDER[S.tab]&&S.tab!=='orbital'){dirty.delete(S.tab);RENDER[S.tab]()}paintBars()};
+const _pd=paintDetail;
+paintDetail=function(){_pd();const d=$('#detail');if(d){const r=document.createElement('div');r.className='row';r.innerHTML=`<span class="note">${Lg('Go to:','برو به:')}</span>${linksHTML()}`;d.appendChild(r);wireBar(r)}};
+const _lang=$('#btnLang').onclick;$('#btnLang').onclick=()=>{_lang();Object.keys(RENDER).forEach(k=>dirty.add(k));paintBars();if(RENDER[S.tab]){dirty.delete(S.tab);RENDER[S.tab]()}paintDetail()};
+const _th=$('#btnTheme').onclick;$('#btnTheme').onclick=()=>{_th();[SPV,SCV,LVS].forEach(v=>v&&v.draw());drawLevels()};
+addEventListener('resize',()=>{[SPV,SCV,LVS].forEach(v=>v&&v.draw());drawLevels()});
+// quick test hook for sources tab
+const rt=$('#runTests');
+applyChrome();paintDetail();
+window.__lab={C,OG,EO,SP,LV,CMP,RENDER};
+})();
+
+</script>
+</body>
+</html>
